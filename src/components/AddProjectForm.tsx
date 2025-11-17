@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
 import { X, Save } from 'lucide-react';
+import { STRINGS } from '../lib/strings';
 
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
 
@@ -59,7 +60,7 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
     setSuccess(null);
 
     if (!user || !canCreate) {
-      setError('Vous n\u2019avez pas les droits pour ajouter un projet.');
+      setError(STRINGS.cannotCreate);
       return;
     }
 
@@ -90,10 +91,10 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
     const { error: insertError } = await (supabase.from('projects') as any).insert(payload);
       if (insertError) throw insertError;
 
-      setSuccess('Projet ajout\u00e9 avec succ\u00e8s.');
+      setSuccess(STRINGS.successProjectAdded);
       onCreated();
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors de la cr\u00e9ation.');
+      setError(err.message || STRINGS.errorProjectCreate);
     } finally {
       setLoading(false);
     }
@@ -104,7 +105,7 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
       <div className="absolute inset-0 bg-black bg-opacity-40" onClick={onClose}></div>
       <div className="relative bg-white w-full max-w-2xl rounded-lg shadow-lg">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">Ajouter un projet</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{STRINGS.addProject}</h2>
           <button onClick={onClose} className="p-2 text-gray-600 hover:text-gray-900" aria-label="Fermer">
             <X className="w-5 h-5" />
           </button>
@@ -112,7 +113,7 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
 
         {!canCreate && (
           <div className="p-4 text-sm text-red-700 bg-red-50">
-            Votre r\u00f4le ne permet pas d\u2019ajouter des projets.
+            {STRINGS.cannotCreate}
           </div>
         )}
 
@@ -147,7 +148,7 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Minist\u00e8re*</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.ministryLabel}</label>
             <input name="ministry" value={form.ministry} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg" required />
           </div>
 
@@ -169,12 +170,12 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date de d\u00e9but*</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.startDateLabel}</label>
             <input type="date" name="start_date" value={form.start_date} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg" required />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date de fin*</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.endDateLabel}</label>
             <input type="date" name="end_date" value={form.end_date} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg" required />
           </div>
 

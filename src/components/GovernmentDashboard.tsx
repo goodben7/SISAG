@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
 import { AddProjectForm } from './AddProjectForm';
+import { STRINGS } from '../lib/strings';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -130,7 +131,7 @@ export function GovernmentDashboard() {
                 className="px-4 py-2 bg-white text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
               >
                 <Plus className="w-5 h-5" />
-                Ajouter un projet
+                {STRINGS.addProject}
               </button>
             )}
           </div>
