@@ -8,6 +8,8 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: theme('colors.rdcGrayBg');
+    color: theme('colors.rdcGrayText');
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: theme('fontFamily.display');
@@ -16,10 +18,29 @@
 }
 
 @layer components {
-  .heading-1 {
-    @apply font-display text-3xl md:text-4xl font-bold tracking-tight;
-  }
-  .heading-2 {
-    @apply font-display text-2xl md:text-3xl font-semibold tracking-tight;
-  }
+  .heading-1 { @apply font-display text-3xl md:text-4xl font-bold tracking-tight; }
+  .heading-2 { @apply font-display text-2xl md:text-3xl font-semibold tracking-tight; }
+  .card { @apply bg-white rounded-lg shadow-soft; }
+  .stat-card { @apply bg-white rounded-lg shadow-soft p-4; }
+  .header-gradient { @apply bg-gradient-to-r from-rdcBlueDark to-rdcBlue; }
+  .nav-button { @apply flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors; }
+  .nav-active { @apply text-white border-b-2 border-rdcYellow; }
+  .nav-inactive { @apply text-white/80 hover:text-white; }
+
+  /* Buttons */
+  .btn-primary { @apply bg-rdcBlue text-white rounded-lg font-medium hover:bg-rdcBlueDark transition-colors; }
+  .btn-secondary { @apply bg-white border border-rdcBlue text-rdcBlue rounded-lg font-medium hover:bg-rdcBlueLight transition-colors; }
+  .btn-danger { @apply bg-rdcRed text-white rounded-lg font-medium hover:bg-rdcRedDark transition-colors; }
+  .btn-success { @apply bg-rdcGreen text-white rounded-lg font-medium hover:bg-rdcGreenDark transition-colors; }
+
+  /* Badges for statuses */
+  .badge { @apply text-xs font-medium px-2 py-1 rounded-full; }
+  .badge-pending { @apply badge bg-rdcYellowLight text-rdcYellow; }
+  .badge-in-review { @apply badge bg-rdcBlueLight text-rdcBlue; }
+  .badge-resolved { @apply badge bg-rdcGreenLight text-rdcGreen; }
+  .badge-rejected { @apply badge bg-rdcRedLight text-rdcRed; }
+
+  /* Progress */
+  .progress-track { @apply w-full bg-rdcGrayBorder rounded-full h-2; }
+  .progress-yellow { @apply h-2 rounded-full bg-rdcYellow transition-all; }
 }

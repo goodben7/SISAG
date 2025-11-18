@@ -130,15 +130,15 @@ export function ReportingTool() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-rdcYellowLight text-rdcYellow border-rdcYellowLight';
       case 'in_review':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-rdcBlueLight text-rdcBlue border-rdcBlueLight';
       case 'resolved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-rdcGreenLight text-rdcGreen border-rdcGreenLight';
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-rdcRedLight text-rdcRed border-rdcRedLight';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-rdcGrayBg text-rdcGrayText border-rdcGrayBorder';
     }
   };
 
@@ -158,16 +158,14 @@ export function ReportingTool() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-rdcGrayBg">
       <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-10 h-10" />
             <div>
               <h1 className="text-3xl font-bold">Signalement Citoyen</h1>
-              <p className="text-red-100 mt-1">
-                Signalez les problèmes et anomalies sur les projets gouvernementaux
-              </p>
+              <p className="text-white/80 mt-1">Signalez les problèmes et anomalies sur les projets gouvernementaux</p>
             </div>
           </div>
         </div>
@@ -180,9 +178,7 @@ export function ReportingTool() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
               Connexion requise
             </h2>
-            <p className="text-gray-600 mb-6">
-              Vous devez être connecté pour soumettre un signalement
-            </p>
+            <p className="text-rdcGrayText mb-6">Vous devez être connecté pour soumettre un signalement</p>
           </div>
         ) : (
           <>
@@ -212,7 +208,7 @@ export function ReportingTool() {
                   </div>
                   <button
                     onClick={() => setShowForm(true)}
-                    className="mt-6 w-full bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                    className="mt-6 w-full btn-danger flex items-center justify-center gap-2"
                   >
                     <AlertTriangle className="w-5 h-5" />
                     Nouveau signalement
@@ -231,13 +227,11 @@ export function ReportingTool() {
                           className={`border rounded-lg p-4 ${getStatusColor(report.status)}`}
                         >
                           <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold">{report.title}</h3>
-                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-white bg-opacity-50">
-                              {getStatusLabel(report.status)}
-                            </span>
+                            <h3 className="font-semibold text-rdcTextPrimary">{report.title}</h3>
+                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/60">{getStatusLabel(report.status)}</span>
                           </div>
-                          <p className="text-sm mb-2">{report.description}</p>
-                          <div className="flex items-center gap-4 text-xs">
+                          <p className="text-sm text-rdcGrayText mb-2">{report.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-rdcGrayText">
                             <span>
                               Catégorie:{' '}
                               {CATEGORIES.find((c) => c.value === report.category)?.label}

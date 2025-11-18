@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, FileText, Plus } from 'lucide-react';
+import { BarChart3, TrendingUp, AlertCircle, CheckCircle, DollarSign, FileText, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
 import { AddProjectForm } from './AddProjectForm';
 import { STRINGS } from '../lib/strings';
+import { ProjectStatsCards } from './ProjectStatsCards';
+import { ProjectStatusChart } from './ProjectStatusChart';
+import { RecentAlerts } from './RecentAlerts';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -56,6 +59,7 @@ export function GovernmentDashboard() {
       ? (projects.reduce((sum, p) => sum + Number(p.spent), 0) / projects.reduce((sum, p) => sum + Number(p.budget), 0)) * 100
       : 0,
   };
+  const delayedPercent = stats.total > 0 ? (stats.delayed / stats.total) * 100 : 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-CD', {
@@ -67,10 +71,10 @@ export function GovernmentDashboard() {
   };
 
   const ALERT_SEVERITY_COLORS = {
-    low: 'bg-blue-100 text-blue-800 border-blue-200',
-    medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    high: 'bg-orange-100 text-orange-800 border-orange-200',
-    critical: 'bg-red-100 text-red-800 border-red-200'
+    low: 'bg-rdcBlueLight text-rdcBlue border-rdcBlueLight',
+    medium: 'bg-rdcYellowLight text-rdcYellow border-rdcYellowLight',
+    high: 'bg-rdcYellowLight text-rdcYellow border-rdcYellowLight',
+    critical: 'bg-rdcRedLight text-rdcRed border-rdcRedLight'
   };
 
   const ALERT_TYPE_LABELS = {
@@ -80,10 +84,10 @@ export function GovernmentDashboard() {
   };
 
   const REPORT_STATUS_COLORS = {
-    pending: 'bg-gray-100 text-gray-800',
-    in_review: 'bg-blue-100 text-blue-800',
-    resolved: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800'
+    pending: 'bg-rdcYellowLight text-rdcYellow',
+    in_review: 'bg-rdcBlueLight text-rdcBlue',
+    resolved: 'bg-rdcGreenLight text-rdcGreen',
+    rejected: 'bg-rdcRedLight text-rdcRed'
   };
 
   const REPORT_STATUS_LABELS = {
@@ -115,7 +119,7 @@ export function GovernmentDashboard() {
           }}
         />
       )}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-800 text-white">
+      <div className="header-gradient text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -136,35 +140,11 @@ export function GovernmentDashboard() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 text-blue-100 text-sm mb-2">
-                <FileText className="w-4 h-4" />
-                <span>Total projets</span>
-              </div>
-              <div className="text-3xl font-bold">{stats.total}</div>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <ProjectStatsCards stats={{ total: stats.total, inProgress: stats.inProgress, completed: stats.completed, delayed: stats.delayed, delayedPercent }} />
             </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 text-blue-100 text-sm mb-2">
-                <Clock className="w-4 h-4" />
-                <span>En cours</span>
-              </div>
-              <div className="text-3xl font-bold">{stats.inProgress}</div>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 text-blue-100 text-sm mb-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>Terminés</span>
-              </div>
-              <div className="text-3xl font-bold">{stats.completed}</div>
-            </div>
-            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 text-blue-100 text-sm mb-2">
-                <AlertCircle className="w-4 h-4" />
-                <span>En retard</span>
-              </div>
-              <div className="text-3xl font-bold">{stats.delayed}</div>
-            </div>
+            <ProjectStatusChart inProgress={stats.inProgress} completed={stats.completed} delayed={stats.delayed} />
           </div>
         </div>
       </div>
@@ -217,13 +197,17 @@ export function GovernmentDashboard() {
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all ${
-                  stats.budgetUtilization > 100 ? 'bg-red-600' :
-                  stats.budgetUtilization > 90 ? 'bg-orange-600' : 'bg-blue-600'
+                  stats.budgetUtilization > 100 ? 'bg-rdcRed' :
+                  stats.budgetUtilization > 90 ? 'bg-rdcYellow' : 'bg-rdcBlue'
                 }`}
                 style={{ width: `${Math.min(100, stats.budgetUtilization)}%` }}
               />
             </div>
           </div>
+        </div>
+
+        <div className="mb-8">
+          <RecentAlerts />
         </div>
 
         <div className="bg-white rounded-lg shadow-sm">

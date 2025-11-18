@@ -6,6 +6,7 @@ import { CitizenDashboard } from './components/CitizenDashboard';
 import { GovernmentDashboard } from './components/GovernmentDashboard';
 import { ReportingTool } from './components/ReportingTool';
 import { CollaborativeWorkspace } from './components/CollaborativeWorkspace';
+import { Footer } from './components/Footer';
 
 type Page = 'citizen' | 'government' | 'reporting' | 'workspace';
 
@@ -38,17 +39,17 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <header className="header-gradient sticky top-0 z-40 text-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-rdcBlue to-rdcBlueDark ring-2 ring-rdcYellow">
                   <span className="text-white font-bold text-lg">S</span>
                 </div>
                 <div className="hidden md:block">
-                  <h1 className="text-lg font-bold text-gray-900">SISAG</h1>
-                  <p className="text-xs text-gray-600">Suivi Action Gouvernementale</p>
+                  <h1 className="text-lg font-bold">SISAG – Suivi de l'Action Gouvernementale</h1>
+                  <p className="text-xs text-white/80">Transparence et participation citoyenne</p>
                 </div>
               </div>
             </div>
@@ -60,10 +61,8 @@ function AppContent() {
                   <button
                     key={item.id}
                     onClick={() => setCurrentPage(item.id as Page)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                      currentPage === item.id
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50'
+                    className={`nav-button ${
+                      currentPage === item.id ? 'nav-active' : 'nav-inactive'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -178,38 +177,7 @@ function AppContent() {
         {currentPage === 'workspace' && <CollaborativeWorkspace />}
       </main>
 
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-bold text-gray-900 mb-3">SISAG</h3>
-              <p className="text-sm text-gray-600">
-                Système d'Intégration et de Suivi de l'Action Gouvernementale pour la République
-                Démocratique du Congo
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Contact</h3>
-              <p className="text-sm text-gray-600">
-                Email: contact@sisag.cd<br />
-                Tél: +243 XXX XXX XXX
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Informations</h3>
-              <p className="text-sm text-gray-600">
-                Hackathon SISAG 2024<br />
-                Transparence et participation citoyenne
-              </p>
-            </div>
-          </div>
-          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600">
-              2024 SISAG. Tous droits réservés. République Démocratique du Congo
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>

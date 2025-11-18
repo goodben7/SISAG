@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Search, Filter, Building2, Clock, DollarSign, AlertTriangle } from 'lucide-react';
+import { MapPin, Search, Filter, Building2, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 
@@ -27,11 +27,19 @@ const STATUS_LABELS = {
 };
 
 const STATUS_COLORS = {
-  planned: 'bg-gray-100 text-gray-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  delayed: 'bg-red-600 text-white',
-  cancelled: 'bg-gray-400 text-white'
+  planned: 'bg-rdcGrayBg text-rdcGrayText',
+  in_progress: 'bg-rdcBlueLight text-rdcBlue',
+  completed: 'bg-rdcGreenLight text-rdcGreen',
+  delayed: 'bg-rdcRedLight text-rdcRed',
+  cancelled: 'bg-rdcGrayBorder text-white'
+};
+
+const STATUS_BORDER_COLORS: Record<Project['status'], string> = {
+  planned: 'border-rdcGrayBorder',
+  in_progress: 'border-rdcBlue',
+  completed: 'border-rdcGreen',
+  delayed: 'border-rdcRed',
+  cancelled: 'border-rdcGrayBorder'
 };
 
 export function CitizenDashboard() {
@@ -97,7 +105,7 @@ export function CitizenDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <div className="header-gradient text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="w-10 h-10" />
@@ -115,12 +123,12 @@ export function CitizenDashboard() {
                 placeholder="Rechercher un projet par nom, description ou ville..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="w-full pl-10 pr-4 py-3 rounded-lg text-rdcTextPrimary focus:outline-none focus:ring-2 focus:ring-rdcBlue"
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-6 py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-white text-rdcBlue rounded-lg font-medium hover:bg-rdcBlueLight transition-colors flex items-center gap-2"
             >
               <Filter className="w-5 h-5" />
               Filtres
@@ -134,7 +142,7 @@ export function CitizenDashboard() {
                 <select
                   value={filters.province}
                   onChange={(e) => setFilters({ ...filters, province: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-rdcGrayBorder rounded-lg text-rdcTextPrimary focus:ring-2 focus:ring-rdcBlue"
                 >
                   <option value="">Toutes les provinces</option>
                   {PROVINCES.map(province => (
@@ -147,7 +155,7 @@ export function CitizenDashboard() {
                 <select
                   value={filters.sector}
                   onChange={(e) => setFilters({ ...filters, sector: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-rdcGrayBorder rounded-lg text-rdcTextPrimary focus:ring-2 focus:ring-rdcBlue"
                 >
                   <option value="">Tous les secteurs</option>
                   {SECTORS.map(sector => (
@@ -160,7 +168,7 @@ export function CitizenDashboard() {
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-rdcGrayBorder rounded-lg text-rdcTextPrimary focus:ring-2 focus:ring-rdcBlue"
                 >
                   <option value="">Tous les statuts</option>
                   {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -210,7 +218,7 @@ export function CitizenDashboard() {
               <div
                 key={project.id}
                 onClick={() => setSelectedProject(project)}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
+                className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden border-l-4 ${STATUS_BORDER_COLORS[project.status]}`}
               >
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-3">
@@ -250,10 +258,7 @@ export function CitizenDashboard() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full transition-all ${
-                          calculateProgress(project) > 100 ? 'bg-red-600' :
-                          calculateProgress(project) > 80 ? 'bg-red-500' : 'bg-blue-600'
-                        }`}
+                        className="h-2 rounded-full bg-rdcYellow transition-all"
                         style={{ width: `${Math.min(100, calculateProgress(project))}%` }}
                       />
                     </div>
@@ -361,7 +366,7 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
 
             <button
               onClick={onClose}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full btn-primary py-3 flex items-center justify-center gap-2"
             >
               <AlertTriangle className="w-5 h-5" />
               Signaler un problème sur ce projet
