@@ -9,7 +9,7 @@ import crypto from 'crypto';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
