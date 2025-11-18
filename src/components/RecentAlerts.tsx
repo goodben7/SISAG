@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Clock } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
+import { getAlerts } from '../lib/api';
 
 type Alert = Database['public']['Tables']['alerts']['Row'];
 
-export function RecentAlerts() {
+export function RecentAlerts({ refreshKey = 0 }: { refreshKey?: number }) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from('alerts').select('*').order('created_at', { ascending: false }).limit(3);
-      setAlerts(data || []);
+      const data = await getAlerts();
+      setAlerts((data || []).slice(0, 3));
     };
     load();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="card p-6">

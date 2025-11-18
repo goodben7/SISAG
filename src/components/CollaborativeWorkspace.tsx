@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MessageSquare, Users, Plus, Send, Paperclip } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { Calendar, MessageSquare, Users, Plus, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
+import { getEvents, getMessages, getProfiles, createEvent, createMessage } from '../lib/api';
 
 type Event = Database['public']['Tables']['events']['Row'];
 type Message = Database['public']['Tables']['messages']['Row'];
@@ -36,14 +36,14 @@ export function CollaborativeWorkspace() {
     setLoading(true);
     try {
       const [eventsRes, messagesRes, profilesRes] = await Promise.all([
-        supabase.from('events').select('*').order('start_time', { ascending: true }),
-        supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(50),
-        supabase.from('profiles').select('*')
+        getEvents(),
+        getMessages(),
+        getProfiles()
       ]);
 
-      if (eventsRes.data) setEvents(eventsRes.data);
-      if (messagesRes.data) setMessages(messagesRes.data);
-      if (profilesRes.data) setProfiles(profilesRes.data);
+      setEvents(eventsRes || []);
+      setMessages(messagesRes || []);
+      setProfiles(profilesRes || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -56,17 +56,14 @@ export function CollaborativeWorkspace() {
     if (!user) return;
 
     try {
-      const { error } = await supabase.from('events').insert({
+      await createEvent({
         title: eventForm.title,
         description: eventForm.description,
         start_time: eventForm.start_time,
         end_time: eventForm.end_time,
         location: eventForm.location,
-        organizer_id: user.id,
         participants: [],
-      });
-
-      if (error) throw error;
+      } as any);
 
       setEventForm({
         title: '',
@@ -88,13 +85,9 @@ export function CollaborativeWorkspace() {
     if (!user || !newMessage.trim()) return;
 
     try {
-      const { error } = await supabase.from('messages').insert({
-        sender_id: user.id,
-        recipient_id: null,
+      await createMessage({
         content: newMessage.trim(),
-      });
-
-      if (error) throw error;
+      } as any);
 
       setNewMessage('');
       loadData();

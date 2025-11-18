@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Camera, MapPin, Send, CheckCircle, XCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { AlertTriangle, MapPin, Send, CheckCircle, XCircle } from 'lucide-react';
+
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
+import { getProjects, getReports, createReport } from '../lib/api';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Report = Database['public']['Tables']['reports']['Row'];
+// Removed unused ReportInsert type alias to fix linter warning.
 
 const CATEGORIES = [
   { value: 'delay', label: 'Retard dans l\'exécution', icon: '⏱️' },
@@ -40,12 +42,7 @@ export function ReportingTool() {
 
   const loadProjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('title');
-
-      if (error) throw error;
+      const data = await getProjects();
       setProjects(data || []);
     } catch (error) {
       console.error('Error loading projects:', error);
@@ -56,13 +53,7 @@ export function ReportingTool() {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('reporter_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await getReports({ mine: true });
       setMyReports(data || []);
     } catch (error) {
       console.error('Error loading reports:', error);
@@ -92,17 +83,16 @@ export function ReportingTool() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('reports').insert({
+      const payload = {
         project_id: formData.project_id || null,
         title: formData.title,
         description: formData.description,
         category: formData.category,
         latitude: formData.latitude,
         longitude: formData.longitude,
-        reporter_id: user.id,
-      });
+      };
 
-      if (error) throw error;
+      await createReport(payload);
 
       setSuccess(true);
       setFormData({

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Search, Filter, Building2, Clock, AlertTriangle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
+import { getProjects } from '../lib/api';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 
@@ -61,21 +61,11 @@ export function CitizenDashboard() {
   const loadProjects = async () => {
     setLoading(true);
     try {
-      let query = supabase.from('projects').select('*');
-
-      if (filters.province) {
-        query = query.eq('province', filters.province);
-      }
-      if (filters.sector) {
-        query = query.eq('sector', filters.sector);
-      }
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await getProjects({
+        province: filters.province || undefined,
+        sector: filters.sector || undefined,
+        status: (filters.status as Project['status']) || undefined
+      });
       setProjects(data || []);
     } catch (error) {
       console.error('Error loading projects:', error);

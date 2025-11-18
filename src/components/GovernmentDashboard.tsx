@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, AlertCircle, CheckCircle, DollarSign, FileText, Plus } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
 import { AddProjectForm } from './AddProjectForm';
+import { AlertForm } from './AlertForm';
 import { STRINGS } from '../lib/strings';
 import { ProjectStatsCards } from './ProjectStatsCards';
 import { ProjectStatusChart } from './ProjectStatusChart';
 import { RecentAlerts } from './RecentAlerts';
+import { getProjects, getAlerts, getReports } from '../lib/api';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -20,6 +22,8 @@ export function GovernmentDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'alerts' | 'reports'>('overview');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [refreshAlertsKey, setRefreshAlertsKey] = useState(0);
   const { profile } = useAuth();
 
   useEffect(() => {
@@ -30,14 +34,14 @@ export function GovernmentDashboard() {
     setLoading(true);
     try {
       const [projectsRes, alertsRes, reportsRes] = await Promise.all([
-        supabase.from('projects').select('*').order('created_at', { ascending: false }),
-        supabase.from('alerts').select('*').order('created_at', { ascending: false }).limit(10),
-        supabase.from('reports').select('*').order('created_at', { ascending: false }).limit(10)
+        getProjects(),
+        getAlerts(),
+        getReports()
       ]);
 
-      if (projectsRes.data) setProjects(projectsRes.data);
-      if (alertsRes.data) setAlerts(alertsRes.data);
-      if (reportsRes.data) setReports(reportsRes.data);
+      setProjects(projectsRes || []);
+      setAlerts(alertsRes || []);
+      setReports(reportsRes || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -119,6 +123,16 @@ export function GovernmentDashboard() {
           }}
         />
       )}
+      {showAlertModal && (
+        <AlertForm
+          onClose={() => setShowAlertModal(false)}
+          onCreated={() => {
+            setShowAlertModal(false);
+            setRefreshAlertsKey((k) => k + 1);
+            loadData();
+          }}
+        />
+      )}
       <div className="header-gradient text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
@@ -130,13 +144,22 @@ export function GovernmentDashboard() {
               </div>
             </div>
             {profile && (profile.role === 'government' || profile.role === 'partner') && (
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 bg-white text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                {STRINGS.addProject}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAlertModal(true)}
+                  className="px-4 py-2 bg-white text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  <AlertCircle className="w-5 h-5" />
+                  Ajouter une alerte
+                </button>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="px-4 py-2 bg-white text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  {STRINGS.addProject}
+                </button>
+              </div>
             )}
           </div>
 
@@ -207,7 +230,7 @@ export function GovernmentDashboard() {
         </div>
 
         <div className="mb-8">
-          <RecentAlerts />
+          <RecentAlerts refreshKey={refreshAlertsKey} />
         </div>
 
         <div className="bg-white rounded-lg shadow-sm">

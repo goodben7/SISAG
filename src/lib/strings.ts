@@ -5,5 +5,17 @@ export const STRINGS = {
   errorProjectCreate: "Une erreur est survenue lors de la création.",
   ministryLabel: "Ministère*",
   startDateLabel: "Date de début*",
-  endDateLabel: "Date de fin*"
+  endDateLabel: "Date de fin*",
+  addAlertTitle: "Ajouter une alerte",
+  projectLabel: "Projet*",
+  selectProjectPlaceholder: "Sélectionnez un projet",
+  typeLabel: "Type*",
+  severityLabel: "Sévérité*",
+  messageLabel: "Message*",
+  errorNoRightsAlert: "Vous n’avez pas les droits pour créer une alerte.",
+  errorSelectProjectMessage: "Veuillez sélectionner un projet et saisir un message.",
+  successAlertCreated: "Alerte créée avec succès.",
+  savingLabel: "Enregistrement...",
+  saveLabel: "Enregistrer",
+  cancelLabel: "Annuler"
 };

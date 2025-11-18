@@ -1,0 +1,119 @@
+PRAGMA foreign_keys = ON;
+
+-- Users table (for authentication)
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+  id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('citizen','government','partner')),
+  organization TEXT,
+  province TEXT,
+  phone TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS profiles_updated_at
+AFTER UPDATE ON profiles
+FOR EACH ROW BEGIN
+  UPDATE profiles SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- Projects table
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  sector TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('planned','in_progress','completed','delayed','cancelled')),
+  budget REAL NOT NULL DEFAULT 0,
+  spent REAL NOT NULL DEFAULT 0,
+  province TEXT NOT NULL,
+  city TEXT NOT NULL,
+  latitude REAL,
+  longitude REAL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  actual_end_date TEXT,
+  ministry TEXT NOT NULL,
+  responsible_person TEXT NOT NULL,
+  images TEXT NOT NULL DEFAULT '[]',
+  created_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS projects_updated_at
+AFTER UPDATE ON projects
+FOR EACH ROW BEGIN
+  UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- Alerts table
+CREATE TABLE IF NOT EXISTS alerts (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('budget_overrun','delay','milestone_missed')),
+  severity TEXT NOT NULL CHECK (severity IN ('low','medium','high','critical')),
+  message TEXT NOT NULL,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Reports table
+CREATE TABLE IF NOT EXISTS reports (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('delay','quality','corruption','other')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_review','resolved','rejected')),
+  latitude REAL,
+  longitude REAL,
+  images TEXT NOT NULL DEFAULT '[]',
+  reporter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_to TEXT REFERENCES users(id) ON DELETE SET NULL,
+  resolution_notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS reports_updated_at
+AFTER UPDATE ON reports
+FOR EACH ROW BEGIN
+  UPDATE reports SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- Messages table
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  content TEXT NOT NULL,
+  attachments TEXT NOT NULL DEFAULT '[]',
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Events table
+CREATE TABLE IF NOT EXISTS events (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  location TEXT NOT NULL,
+  organizer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  participants TEXT NOT NULL DEFAULT '[]',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

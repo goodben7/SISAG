@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
 import { X, Save } from 'lucide-react';
 import { STRINGS } from '../lib/strings';
+import { createProject } from '../lib/api';
 
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
 
@@ -71,7 +71,7 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
 
     try {
       setLoading(true);
-      const payload: ProjectInsert = {
+      const payload: Omit<ProjectInsert, 'created_by'> & { created_by?: ProjectInsert['created_by'] } = {
         title: form.title,
         description: form.description,
         sector: form.sector,
@@ -84,12 +84,10 @@ export function AddProjectForm({ onClose, onCreated }: Props) {
         end_date: form.end_date,
         ministry: form.ministry,
         responsible_person: form.responsible_person,
-        images: [],
-        created_by: user.id
       };
 
-    const { error: insertError } = await (supabase.from('projects') as any).insert(payload);
-      if (insertError) throw insertError;
+const { images: _images, created_by: _createdBy, ...rest } = payload;
+await createProject(rest);
 
       setSuccess(STRINGS.successProjectAdded);
       onCreated();
