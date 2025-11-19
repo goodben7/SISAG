@@ -9,7 +9,32 @@ import crypto from 'crypto';
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+
+// CORS configuration: support multiple origins, proper preflight headers, and 200 for OPTIONS
+const rawOrigins = process.env.CORS_ORIGIN || process.env.CORS_ORIGINS || '*';
+const allowedOrigins = rawOrigins.split(',').map(o => o.trim()).filter(Boolean);
+
+const corsOptions = {
+  origin: (allowedOrigins.length === 1 && allowedOrigins[0] === '*') ? '*' : allowedOrigins,
+  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+// Global OPTIONS preflight handler for Express 5 (no wildcard route support)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin;
+    const allowOrigin = (allowedOrigins.length === 1 && allowedOrigins[0] === '*') ? '*' : (origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0] || '*');
+    res.header('Access-Control-Allow-Origin', allowOrigin);
+    res.header('Access-Control-Allow-Methods', corsOptions.methods.join(','));
+    res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(','));
+    res.status(corsOptions.optionsSuccessStatus).end();
+  } else {
+    next();
+  }
+});
 app.use(express.json());
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
