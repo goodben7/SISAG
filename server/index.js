@@ -12,7 +12,7 @@ const app = express();
 
 // CORS configuration: support multiple origins, proper preflight headers, and 200 for OPTIONS
 const rawOrigins = process.env.CORS_ORIGIN || process.env.CORS_ORIGINS || '*';
-const allowedOrigins = rawOrigins.split(',').map(o => o.trim()).filter(Boolean);
+const allowedOrigins = rawOrigins.split(',').map(o => o.trim().replace(/\/$/, '')).filter(Boolean);
 
 const corsOptions = {
   origin: (allowedOrigins.length === 1 && allowedOrigins[0] === '*') ? '*' : allowedOrigins,
