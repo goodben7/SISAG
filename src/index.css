@@ -3,6 +3,23 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --rdc-blue: theme('colors.rdcBlue');
+    --rdc-blue-dark: theme('colors.rdcBlueDark');
+    --rdc-blue-light: theme('colors.rdcBlueLight');
+    --rdc-yellow: theme('colors.rdcYellow');
+    --rdc-yellow-light: theme('colors.rdcYellowLight');
+    --rdc-red: theme('colors.rdcRed');
+    --rdc-red-dark: theme('colors.rdcRedDark');
+    --rdc-red-light: theme('colors.rdcRedLight');
+    --rdc-green: theme('colors.rdcGreen');
+    --rdc-green-dark: theme('colors.rdcGreenDark');
+    --rdc-green-light: theme('colors.rdcGreenLight');
+    --neutral-bg: theme('colors.rdcGrayBg');
+    --neutral-text: theme('colors.rdcGrayText');
+    --neutral-border: theme('colors.rdcGrayBorder');
+    --text-primary: theme('colors.rdcTextPrimary');
+  }
   html, body {
     font-family: theme('fontFamily.sans');
     text-rendering: optimizeLegibility;
