@@ -8,13 +8,35 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const rawDbPath = process.env.DB_PATH || path.join(process.cwd(), 'server', 'sisag.db');
-const dbPath = path.isAbsolute(rawDbPath) ? rawDbPath : path.resolve(process.cwd(), rawDbPath);
+const rawDbPathEnv = process.env.DB_PATH;
+const defaultRelativeDb = path.join('server', 'sisag.db');
+const rawDbPath = rawDbPathEnv && rawDbPathEnv.trim() !== '' ? rawDbPathEnv : defaultRelativeDb;
+let dbPath = path.isAbsolute(rawDbPath) ? rawDbPath : path.resolve(process.cwd(), rawDbPath);
 const schemaPath = path.resolve(__dirname, 'schema.sql');
 
-// Ensure parent directory exists for the SQLite file
-const dir = path.dirname(dbPath);
-if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+// Ensure parent directory exists or gracefully fallback if not permitted
+function resolveWritableDbPath(targetPath) {
+  const dir = path.dirname(targetPath);
+  try {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.accessSync(dir, fs.constants.W_OK);
+    return targetPath;
+  } catch (err) {
+    const fallbackPath = path.resolve(process.cwd(), defaultRelativeDb);
+    const fallbackDir = path.dirname(fallbackPath);
+    try {
+      if (!fs.existsSync(fallbackDir)) fs.mkdirSync(fallbackDir, { recursive: true });
+      fs.accessSync(fallbackDir, fs.constants.W_OK);
+    } catch (e) {
+      // If fallback also fails, rethrow original error to avoid silent failures
+      throw err;
+    }
+    console.warn(`[DB] Cannot use directory "${dir}" (${err.code}). Falling back to "${fallbackDir}".`);
+    return fallbackPath;
+  }
+}
+
+dbPath = resolveWritableDbPath(dbPath);
 
 const db = new Database(dbPath);
 db.pragma('foreign_keys = ON');
