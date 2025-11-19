@@ -6,7 +6,7 @@ SISAG est une application web visant à améliorer la transparence, la gestion e
 
 - Node.js (v18 ou supérieur recommandé)
 - npm ou yarn
-- Un compte Supabase et une instance configurée
+- (Optionnel) Comptes pour le déploiement: Netlify (front) et Render (API)
 
 ## Installation
 
@@ -27,22 +27,41 @@ SISAG est une application web visant à améliorer la transparence, la gestion e
 
 ## Configuration
 
-1. Copiez le fichier `.env.example` en `.env` et renseignez les variables Supabase :
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-2. Vérifiez la configuration de la base de données dans `supabase/migrations/`.
+Créez un fichier `.env` à la racine du projet et renseignez:
+
+Back-end (Node/Express):
+
+- `PORT` (par défaut: 4000)
+- `JWT_SECRET` (obligatoire)
+- `CORS_ORIGIN` ou `CORS_ORIGINS` (ex: `http://localhost:5173` ou liste séparée par des virgules)
+- `DB_PATH` (optionnel, chemin vers la base SQLite; par défaut `server/sisag.db`)
+
+Front-end (Vite/React):
+
+- `VITE_API_BASE_URL` (ex: `http://localhost:4000`)
+
+Références:
+
+- Back-end: `server/index.js`, `server/db.js`, `server/schema.sql`
+- Front-end: `src/lib/api.ts`
 
 ## Lancement
 
-Pour démarrer le serveur de développement :
+1. Démarrer l'API :
 
-```bash
-npm run dev
-# ou
-yarn dev
-```
+   ```bash
+   npm run api:start
+   ```
 
-L'application sera accessible sur `http://localhost:5173`.
+   (API: `http://localhost:4000`)
+
+2. Démarrer le front :
+
+   ```bash
+   npm run dev
+   ```
+
+(Front: `http://localhost:5173`)
 
 ## Fonctionnalités principales
 
@@ -59,15 +78,18 @@ L'application sera accessible sur `http://localhost:5173`.
 ## Structure des dossiers
 
 - `src/components/` : Composants React principaux (GovernmentDashboard, CitizenDashboard, ReportingTool, CollaborativeWorkspace, etc.)
-- `src/contexts/` : Gestion du contexte d'authentification.
-- `src/lib/` : Configuration Supabase et types de base de données.
-- `supabase/migrations/` : Scripts SQL pour la structure de la base de données.
+- `src/contexts/` : Gestion du contexte d'authentification
+- `src/lib/` : Client API (`api.ts`), types de base de données et utilitaires
+- `server/` : API Node/Express + SQLite (`index.js`, `db.js`, `schema.sql`, `sisag.db`)
 
 ## Commandes utiles
 
-- `npm run dev` : Démarrer le serveur de développement
-- `npm run build` : Générer la version de production
-- `npm run preview` : Prévisualiser la version de production
+- `npm run api:start` : Démarrer l'API (Express)
+- `npm run dev` : Démarrer le front en développement (Vite)
+- `npm run build` : Générer la version de production du front
+- `npm run preview` : Prévisualiser la version de production du front
+- `npm run lint` : Linter le code
+- `npm run typecheck` : Vérifier les types TypeScript
 
 ## Contribution
 
