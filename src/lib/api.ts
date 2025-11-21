@@ -72,3 +72,60 @@ export async function createEvent(payload: Omit<Database['public']['Tables']['ev
 type Message = Database['public']['Tables']['messages']['Row'];
 export async function getMessages() { return request('/messages', { method: 'GET' }) as Promise<Message[]>; }
 export async function createMessage(payload: Omit<Database['public']['Tables']['messages']['Insert'],'sender_id'|'attachments'|'is_read'> & { attachments?: any[] }) { return request('/messages', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Message>; }
+
+// Planning: Objectives, Phases, Alignment, Planning Alerts
+export type Objective = { id: string; code: string; title: string; level: 'national'|'provincial'|'territorial'; sector: string; created_at: string };
+export async function getObjectives() { return request('/objectives', { method: 'GET' }) as Promise<Objective[]>; }
+export async function createObjective(payload: { code: string; title: string; level?: 'national'|'provincial'|'territorial'; sector: string; }) {
+  return request('/objectives', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Objective>;
+}
+
+export type Phase = {
+  id: string;
+  project_id: string;
+  name: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  status: 'planned'|'in_progress'|'completed'|'blocked';
+  deliverables: any[];
+  created_at: string;
+  updated_at: string;
+};
+export async function getProjectPhases(projectId: string) {
+  return request(`/projects/${projectId}/phases`, { method: 'GET' }) as Promise<Phase[]>;
+}
+export async function createPhase(projectId: string, payload: Omit<Phase,'id'|'project_id'|'created_at'|'updated_at'>) {
+  return request(`/projects/${projectId}/phases`, { method: 'POST', body: JSON.stringify(payload) }) as Promise<Phase>;
+}
+export async function getProjectObjectives(projectId: string) {
+  return request(`/projects/${projectId}/objectives`, { method: 'GET' }) as Promise<AlignmentObjective[]>;
+}
+export async function linkProjectObjective(projectId: string, payload: { objective_id: string; weight: number }) {
+  return request(`/projects/${projectId}/objectives`, { method: 'POST', body: JSON.stringify(payload) }) as Promise<{ project_id: string; objective_id: string; weight: number }>;
+}
+export async function updateProjectObjectiveWeight(projectId: string, objectiveId: string, weight: number) {
+  return request(`/projects/${projectId}/objectives`, { method: 'POST', body: JSON.stringify({ objective_id: objectiveId, weight }) }) as Promise<{ project_id: string; objective_id: string; weight: number }>;
+}
+export async function unlinkProjectObjective(projectId: string, objectiveId: string) {
+  return request(`/projects/${projectId}/objectives/${objectiveId}`, { method: 'DELETE' }) as Promise<{ success: true }>;
+}
+
+export type AlignmentObjective = { id: string; code: string; title: string; level: 'national'|'provincial'|'territorial'; sector: string; weight: number };
+export type AlignmentResult = { score: number; objectives: AlignmentObjective[]; redundancy: { similarProjects: number }; suggestions: { id: string; code: string; title: string; level: 'national'|'provincial'|'territorial'; sector: string }[] };
+export async function getProjectAlignment(projectId: string) {
+  return request(`/projects/${projectId}/alignment`, { method: 'GET' }) as Promise<AlignmentResult>;
+}
+
+export type PlanningAlert = { id: string; project_id: string; phase_id: string|null; type: 'delay'|'blocked'|'budget_drift'; severity: 'low'|'medium'|'high'|'critical'; message: string; created_at: string };
+export async function getPlanningAlerts() { return request('/alerts/planning', { method: 'GET' }) as Promise<PlanningAlert[]>; }
+export async function createPlanningAlert(payload: { project_id: string; phase_id?: string|null; type: PlanningAlert['type']; severity: PlanningAlert['severity']; message: string; }) {
+  return request('/alerts/planning', { method: 'POST', body: JSON.stringify(payload) }) as Promise<PlanningAlert>;
+}
+export async function updatePhase(projectId: string, phaseId: string, payload: Partial<Omit<Phase,'id'|'project_id'|'created_at'|'updated_at'>>) {
+  return request(`/projects/${projectId}/phases/${phaseId}`, { method: 'PUT', body: JSON.stringify(payload) }) as Promise<Phase>;
+}
+export async function deletePhase(projectId: string, phaseId: string) {
+  return request(`/projects/${projectId}/phases/${phaseId}`, { method: 'DELETE' }) as Promise<{ success: true }>;
+}

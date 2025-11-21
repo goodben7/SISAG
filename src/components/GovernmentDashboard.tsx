@@ -3,13 +3,16 @@ import { BarChart3, TrendingUp, AlertCircle, CheckCircle, DollarSign, FileText, 
 
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
-import { AddProjectForm } from './AddProjectForm';
+import { useNavigate } from 'react-router-dom';
 import { AlertForm } from './AlertForm';
 import { STRINGS } from '../lib/strings';
 import { ProjectStatsCards } from './ProjectStatsCards';
 import { ProjectStatusChart } from './ProjectStatusChart';
 import { RecentAlerts } from './RecentAlerts';
 import { getProjects, getAlerts, getReports } from '../lib/api';
+import PhaseGantt from './PhaseGantt';
+import AlignmentChecklist from './AlignmentChecklist';
+import { PlanningAlertsPanel } from './PlanningAlertsPanel';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -21,7 +24,7 @@ export function GovernmentDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'alerts' | 'reports'>('overview');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const navigate = useNavigate();
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [refreshAlertsKey, setRefreshAlertsKey] = useState(0);
   const { profile } = useAuth();
@@ -114,15 +117,7 @@ export function GovernmentDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {showAddModal && (
-        <AddProjectForm
-          onClose={() => setShowAddModal(false)}
-          onCreated={() => {
-            setShowAddModal(false);
-            loadData();
-          }}
-        />
-      )}
+
       {showAlertModal && (
         <AlertForm
           onClose={() => setShowAlertModal(false)}
@@ -153,7 +148,7 @@ export function GovernmentDashboard() {
                   Ajouter une alerte
                 </button>
                 <button
-                  onClick={() => setShowAddModal(true)}
+                  onClick={() => navigate('/projects/new')}
                   className="px-4 py-2 bg-white text-blue-700 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
@@ -274,8 +269,8 @@ export function GovernmentDashboard() {
 
           <div className="p-6">
             {selectedTab === 'overview' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Projets récents</h3>
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900">Projets récents</h3>
                 {projects.slice(0, 5).map((project) => (
                   <div key={project.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
                     <div className="flex items-start justify-between">
@@ -305,12 +300,24 @@ export function GovernmentDashboard() {
                     </div>
                   </div>
                 ))}
+                {projects.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white border rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects[0].title}</h4>
+                      <PhaseGantt projectId={projects[0].id} />
+                    </div>
+                    <div className="bg-white border rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects[0].title}</h4>
+                      <AlignmentChecklist projectId={projects[0].id} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {selectedTab === 'alerts' && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Alertes récentes</h3>
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900">Alertes récentes</h3>
                 {alerts.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
@@ -335,6 +342,9 @@ export function GovernmentDashboard() {
                     </div>
                   ))
                 )}
+                <div className="bg-white border rounded-lg p-4">
+                  <PlanningAlertsPanel />
+                </div>
               </div>
             )}
 

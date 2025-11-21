@@ -44,4 +44,24 @@ db.pragma('foreign_keys = ON');
 const schema = fs.readFileSync(schemaPath, 'utf-8');
 db.exec(schema);
 
+// Seed default PAG objectives using prepared statements
+try {
+  const insertObjective = db.prepare('INSERT OR IGNORE INTO objectives (code, title, level, sector) VALUES (?, ?, ?, ?)');
+  const objectives = [
+    ['EDU-1','Construction et réhabilitation des écoles','national','Éducation'],
+    ['SANTE-1','Renforcement des services de santé primaire','national','Santé'],
+    ['INF-1','Développement des infrastructures routières','national','Infrastructure'],
+    ['EAU-1','Accès à l\'eau potable et assainissement','national','Eau et assainissement'],
+    ['ENER-1','Amélioration de l\'accès à l\'énergie','national','Énergie']
+  ];
+  const transaction = db.transaction(() => {
+    for (const row of objectives) {
+      insertObjective.run(...row);
+    }
+  });
+  transaction();
+} catch (err) {
+  console.error('[DB] Seed objectives failed:', err);
+}
+
 export default db;

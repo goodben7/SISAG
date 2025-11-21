@@ -260,6 +260,119 @@ export interface Database {
           participants?: Json
           created_at?: string
         }
+      },
+      objectives: {
+        Row: {
+          id: string
+          code: string
+          title: string
+          level: 'national' | 'provincial' | 'territorial'
+          sector: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          title: string
+          level?: 'national' | 'provincial' | 'territorial'
+          sector: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          title?: string
+          level?: 'national' | 'provincial' | 'territorial'
+          sector?: string
+          created_at?: string
+        }
+      },
+      project_objectives: {
+        Row: {
+          project_id: string
+          objective_id: string
+          weight: number
+        }
+        Insert: {
+          project_id: string
+          objective_id: string
+          weight?: number
+        }
+        Update: {
+          project_id?: string
+          objective_id?: string
+          weight?: number
+        }
+      },
+      phases: {
+        Row: {
+          id: string
+          project_id: string
+          name: string
+          planned_start: string | null
+          planned_end: string | null
+          actual_start: string | null
+          actual_end: string | null
+          status: 'planned' | 'in_progress' | 'completed' | 'blocked'
+          deliverables: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          name: string
+          planned_start?: string | null
+          planned_end?: string | null
+          actual_start?: string | null
+          actual_end?: string | null
+          status: 'planned' | 'in_progress' | 'completed' | 'blocked'
+          deliverables?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          name?: string
+          planned_start?: string | null
+          planned_end?: string | null
+          actual_start?: string | null
+          actual_end?: string | null
+          status?: 'planned' | 'in_progress' | 'completed' | 'blocked'
+          deliverables?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      },
+      alerts_planning: {
+        Row: {
+          id: string
+          project_id: string
+          phase_id: string | null
+          type: 'delay' | 'blocked' | 'budget_drift'
+          severity: 'low' | 'medium' | 'high' | 'critical'
+          message: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          phase_id?: string | null
+          type: 'delay' | 'blocked' | 'budget_drift'
+          severity: 'low' | 'medium' | 'high' | 'critical'
+          message: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          phase_id?: string | null
+          type?: 'delay' | 'blocked' | 'budget_drift'
+          severity?: 'low' | 'medium' | 'high' | 'critical'
+          message?: string
+          created_at?: string
+        }
       }
     }
   }

@@ -211,6 +211,146 @@ app.post('/messages', requireAuth, requireRole(['government','partner']), (req, 
   res.json(row);
 });
 
+// Objectives
+app.get('/objectives', (req, res) => {
+  const rows = db.prepare('SELECT * FROM objectives ORDER BY code ASC').all();
+  res.json(rows);
+});
+
+app.post('/objectives', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { code, title, level = 'national', sector } = req.body || {};
+  if (!code || !title || !level || !sector) return res.status(400).json({ error: 'Missing required fields' });
+  const id = crypto.randomUUID();
+  try {
+    db.prepare('INSERT INTO objectives (id, code, title, level, sector) VALUES (?, ?, ?, ?, ?)')
+      .run(id, code, title, level, sector);
+    const row = db.prepare('SELECT * FROM objectives WHERE id = ?').get(id);
+    res.json(row);
+  } catch (e) {
+    res.status(400).json({ error: 'Objective creation failed' });
+  }
+});
+
+// Project phases
+app.get('/projects/:id/phases', (req, res) => {
+  const rows = db.prepare('SELECT * FROM phases WHERE project_id = ? ORDER BY created_at ASC').all(req.params.id)
+    .map(p => ({ ...p, deliverables: JSON.parse(p.deliverables || '[]') }));
+  res.json(rows);
+});
+
+app.post('/projects/:id/phases', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const ph = req.body || {};
+  if (!ph.name || !ph.status) return res.status(400).json({ error: 'Missing required fields' });
+  const id = crypto.randomUUID();
+  db.prepare(`INSERT INTO phases (id, project_id, name, planned_start, planned_end, actual_start, actual_end, status, deliverables)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(id, req.params.id, ph.name, ph.planned_start ?? null, ph.planned_end ?? null, ph.actual_start ?? null, ph.actual_end ?? null, ph.status, JSON.stringify(ph.deliverables || []));
+  const row = db.prepare('SELECT * FROM phases WHERE id = ?').get(id);
+  row.deliverables = JSON.parse(row.deliverables || '[]');
+  res.json(row);
+});
+
+app.put('/projects/:projectId/phases/:phaseId', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { projectId, phaseId } = req.params;
+  const existing = db.prepare('SELECT * FROM phases WHERE id = ? AND project_id = ?').get(phaseId, projectId);
+  if (!existing) return res.status(404).json({ error: 'Phase not found' });
+  const ph = req.body || {};
+  const updated = {
+    name: ph.name ?? existing.name,
+    planned_start: ph.planned_start ?? existing.planned_start,
+    planned_end: ph.planned_end ?? existing.planned_end,
+    actual_start: ph.actual_start ?? existing.actual_start,
+    actual_end: ph.actual_end ?? existing.actual_end,
+    status: ph.status ?? existing.status,
+    deliverables: JSON.stringify(ph.deliverables ?? JSON.parse(existing.deliverables || '[]'))
+  };
+  db.prepare(`UPDATE phases SET name = ?, planned_start = ?, planned_end = ?, actual_start = ?, actual_end = ?, status = ?, deliverables = ? WHERE id = ? AND project_id = ?`)
+    .run(updated.name, updated.planned_start, updated.planned_end, updated.actual_start, updated.actual_end, updated.status, updated.deliverables, phaseId, projectId);
+  const row = db.prepare('SELECT * FROM phases WHERE id = ?').get(phaseId);
+  row.deliverables = JSON.parse(row.deliverables || '[]');
+  res.json(row);
+});
+
+app.delete('/projects/:projectId/phases/:phaseId', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { projectId, phaseId } = req.params;
+  const info = db.prepare('DELETE FROM phases WHERE id = ? AND project_id = ?').run(phaseId, projectId);
+  if ((info.changes || 0) === 0) return res.status(404).json({ error: 'Phase not found' });
+  res.json({ success: true });
+});
+
+// Project objectives linking
+app.get('/projects/:id/objectives', (req, res) => {
+  const rows = db.prepare(`SELECT o.id, o.code, o.title, o.level, o.sector, po.weight
+    FROM project_objectives po
+    JOIN objectives o ON o.id = po.objective_id
+    WHERE po.project_id = ?
+    ORDER BY o.code ASC`).all(req.params.id);
+  res.json(rows);
+});
+
+app.post('/projects/:id/objectives', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { objective_id, weight = 1 } = req.body || {};
+  if (!objective_id) return res.status(400).json({ error: 'Missing objective_id' });
+  const w = Math.max(1, Math.min(5, Number(weight || 1)));
+  db.prepare(`INSERT INTO project_objectives (project_id, objective_id, weight)
+    VALUES (?, ?, ?)
+    ON CONFLICT(project_id, objective_id) DO UPDATE SET weight = excluded.weight`).run(req.params.id, objective_id, w);
+  const row = db.prepare('SELECT project_id, objective_id, weight FROM project_objectives WHERE project_id = ? AND objective_id = ?')
+    .get(req.params.id, objective_id);
+  res.json(row);
+});
+
+app.delete('/projects/:projectId/objectives/:objectiveId', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { projectId, objectiveId } = req.params;
+  const info = db.prepare('DELETE FROM project_objectives WHERE project_id = ? AND objective_id = ?').run(projectId, objectiveId);
+  if ((info.changes || 0) === 0) return res.status(404).json({ error: 'Link not found' });
+  res.json({ success: true });
+});
+
+// Alignment computation
+app.get('/projects/:id/alignment', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const links = db.prepare(`SELECT o.id, o.code, o.title, o.level, o.sector, po.weight
+    FROM project_objectives po
+    JOIN objectives o ON o.id = po.objective_id
+    WHERE po.project_id = ?`).all(req.params.id);
+
+  const totalPossible = (links.length || 1) * 5;
+  const totalWeight = links.reduce((sum, l) => sum + Number(l.weight || 0), 0);
+  const score = Math.round((totalWeight / totalPossible) * 100);
+
+  // Simple redundancy detection: count similar sector projects in same province
+  const similarCount = db.prepare('SELECT COUNT(1) AS c FROM projects WHERE province = ? AND sector = ? AND id != ?')
+    .get(project.province, project.sector, project.id)?.c || 0;
+
+  // Suggestions: objectives by sector not yet linked
+  const suggestions = db.prepare(`SELECT o.id, o.code, o.title, o.level, o.sector
+    FROM objectives o
+    WHERE o.sector = ? AND o.id NOT IN (SELECT objective_id FROM project_objectives WHERE project_id = ?)
+    ORDER BY o.code ASC LIMIT 5`).all(project.sector, project.id);
+
+  res.json({ score, objectives: links, redundancy: { similarProjects: similarCount }, suggestions });
+});
+
+// Planning alerts
+app.get('/alerts/planning', (req, res) => {
+  const rows = db.prepare('SELECT * FROM alerts_planning ORDER BY created_at DESC LIMIT 50').all();
+  res.json(rows);
+});
+
+app.post('/alerts/planning', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const a = req.body || {};
+  if (!a.project_id || !a.type || !a.severity || !a.message) return res.status(400).json({ error: 'Missing required fields' });
+  const id = crypto.randomUUID();
+  db.prepare(`INSERT INTO alerts_planning (id, project_id, phase_id, type, severity, message)
+    VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(id, a.project_id, a.phase_id ?? null, a.type, a.severity, a.message);
+  const row = db.prepare('SELECT * FROM alerts_planning WHERE id = ?').get(id);
+  res.json(row);
+});
+
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
 app.listen(PORT, () => {

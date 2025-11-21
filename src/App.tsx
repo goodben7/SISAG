@@ -7,6 +7,8 @@ import { GovernmentDashboard } from './components/GovernmentDashboard';
 import { ReportingTool } from './components/ReportingTool';
 import { CollaborativeWorkspace } from './components/CollaborativeWorkspace';
 import { Footer } from './components/Footer';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AddProjectPage } from './components/AddProjectPage';
 
 type Page = 'citizen' | 'government' | 'reporting' | 'workspace';
 
@@ -187,7 +189,12 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppContent />} />
+          <Route path="/projects/new" element={<AddProjectPage />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

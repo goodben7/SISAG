@@ -117,3 +117,55 @@ CREATE TABLE IF NOT EXISTS events (
   participants TEXT NOT NULL DEFAULT '[]',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Objectives (PAG)
+CREATE TABLE IF NOT EXISTS objectives (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  code TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  level TEXT NOT NULL CHECK (level IN ('national','provincial','territorial')),
+  sector TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Default PAG Objectives are seeded programmatically in server/db.js to avoid SQL quoting issues.
+
+-- Project ↔ Objective linkage with weight (importance)
+CREATE TABLE IF NOT EXISTS project_objectives (
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  objective_id TEXT NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+  weight INTEGER NOT NULL DEFAULT 1 CHECK (weight BETWEEN 1 AND 5),
+  PRIMARY KEY (project_id, objective_id)
+);
+
+-- Phases by project
+CREATE TABLE IF NOT EXISTS phases (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  planned_start TEXT,
+  planned_end TEXT,
+  actual_start TEXT,
+  actual_end TEXT,
+  status TEXT NOT NULL CHECK (status IN ('planned','in_progress','completed','blocked')),
+  deliverables TEXT NOT NULL DEFAULT '[]',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS phases_updated_at
+AFTER UPDATE ON phases
+FOR EACH ROW BEGIN
+  UPDATE phases SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;
+
+-- Planning alerts (delays, blocks, budget drift)
+CREATE TABLE IF NOT EXISTS alerts_planning (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  phase_id TEXT REFERENCES phases(id) ON DELETE SET NULL,
+  type TEXT NOT NULL CHECK (type IN ('delay','blocked','budget_drift')),
+  severity TEXT NOT NULL CHECK (severity IN ('low','medium','high','critical')),
+  message TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
