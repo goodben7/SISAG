@@ -281,7 +281,7 @@ export function GovernmentDashboard() {
                   <div
                     key={project.id}
                     className={`border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer ${selectedProjectId === project.id ? 'border-blue-500 ring-1 ring-blue-200' : ''}`}
-                    onClick={() => setSelectedProjectId(project.id)}
+                    onClick={() => setSelectedProjectId(prev => prev === project.id ? null : project.id)}
                     role="button"
                     aria-pressed={selectedProjectId === project.id}
                     title="Sélectionner ce projet"
