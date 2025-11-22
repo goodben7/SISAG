@@ -25,6 +25,7 @@ export function GovernmentDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'alerts' | 'reports'>('overview');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [refreshAlertsKey, setRefreshAlertsKey] = useState(0);
@@ -277,7 +278,14 @@ export function GovernmentDashboard() {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900">Projets récents</h3>
                 {projects.slice(0, 5).map((project) => (
-                  <div key={project.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                  <div
+                    key={project.id}
+                    className={`border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer ${selectedProjectId === project.id ? 'border-blue-500 ring-1 ring-blue-200' : ''}`}
+                    onClick={() => setSelectedProjectId(project.id)}
+                    role="button"
+                    aria-pressed={selectedProjectId === project.id}
+                    title="Sélectionner ce projet"
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900 mb-1">{project.title}</h4>
@@ -307,14 +315,22 @@ export function GovernmentDashboard() {
                 ))}
                 {projects.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white border rounded-lg p-4">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects[0].title}</h4>
-                      <PhaseGantt projectId={projects[0].id} />
-                    </div>
-                    <div className="bg-white border rounded-lg p-4">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects[0].title}</h4>
-                      <AlignmentChecklist projectId={projects[0].id} />
-                    </div>
+                    {selectedProjectId ? (
+                      <>
+                        <div className="bg-white border rounded-lg p-4">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
+                          <PhaseGantt projectId={selectedProjectId} />
+                        </div>
+                        <div className="bg-white border rounded-lg p-4">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
+                          <AlignmentChecklist projectId={selectedProjectId} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="col-span-2 bg-white border rounded-lg p-6 text-sm text-gray-600">
+                        {STRINGS.selectProjectForPhasesAlignment}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

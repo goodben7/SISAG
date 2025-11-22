@@ -68,6 +68,7 @@ export interface UiStrings {
   objectiveDetailsTitle: string;
   indicatorsLabel: string;
   learnMoreLabel: string;
+  selectProjectForPhasesAlignment: string;
   // Indicateurs supplémentaires
   additionalIndicatorsTitle: string;
   alignmentTitle: string;
@@ -148,6 +149,7 @@ export const STRINGS = {
   objectiveDetailsTitle: "Détails de l\u0027objectif",
   indicatorsLabel: "Indicateurs",
   learnMoreLabel: "En savoir plus",
+  selectProjectForPhasesAlignment: "Sélectionnez un projet pour voir ses phases et son alignement",
   // Indicateurs supplémentaires
   additionalIndicatorsTitle: "Indicateurs supplémentaires",
   alignmentTitle: "Alignement au PAG",
