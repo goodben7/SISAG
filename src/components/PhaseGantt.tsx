@@ -262,7 +262,7 @@ export function PhaseGantt({ projectId }: { projectId: string }) {
       });
       await refresh();
     } catch (e: any) {
-      setError(e?.message || "Erreur lors de l\u0027ajout de la phase");
+      setError(e?.message || "Erreur lors de l'ajout de la phase");
     }
   }
 

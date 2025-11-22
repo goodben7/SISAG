@@ -55,6 +55,15 @@ export interface UiStrings {
   titleLabel: string;
   levelLabel: string;
   sectorLabel: string;
+  // Indicateurs supplémentaires
+  additionalIndicatorsTitle: string;
+  alignmentTitle: string;
+  alignedProjectsLabel: string;
+  varianceTitle: string;
+  underUtilizationLabel: string;
+  atRiskTitle: string;
+  trendTitle: string;
+  topSpendersTitle: string;
 }
 
 export const STRINGS = {
@@ -78,7 +87,7 @@ export const STRINGS = {
   typeLabel: "Type*",
   severityLabel: "Sévérité*",
   messageLabel: "Message*",
-  messagePlaceholder: "Décrivez l\u0027alerte",
+  messagePlaceholder: "Décrivez l'alerte",
   errorNoRightsAlert: "Vous n’avez pas les droits pour créer une alerte.",
   errorSelectProjectMessage: "Veuillez sélectionner un projet et saisir un message.",
   successAlertCreated: "Alerte créée avec succès.",
@@ -105,7 +114,7 @@ export const STRINGS = {
   objectivesLabel: "Objectifs liés",
   weightLabel: "Poids",
   suggestionsLabel: "Suggestions",
-  emptyAlignmentLabel: "Aucune donnée d\u0027alignement.",
+  emptyAlignmentLabel: "Aucune donnée d'alignement.",
   addObjectiveLabel: "Ajouter",
   unlinkObjectiveLabel: "Retirer",
   pagObjectivesLabel: "Objectifs PAG (optionnel)",
@@ -113,7 +122,16 @@ export const STRINGS = {
   codeLabel: "Code",
   titleLabel: "Titre",
   levelLabel: "Niveau",
-  sectorLabel: "Secteur"
+  sectorLabel: "Secteur",
+  // Indicateurs supplémentaires
+  additionalIndicatorsTitle: "Indicateurs supplémentaires",
+  alignmentTitle: "Alignement au PAG",
+  alignedProjectsLabel: "Projets alignés (≥ 70%)",
+  varianceTitle: "Variance budgétaire",
+  underUtilizationLabel: "Sous-utilisation: ",
+  atRiskTitle: "Projets à risque",
+  trendTitle: "Tendance des alertes",
+  topSpendersTitle: "Secteurs les plus dépensiers"
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

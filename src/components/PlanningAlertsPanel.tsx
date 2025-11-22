@@ -135,7 +135,7 @@ function AlertCreateForm({
             onChange={onChange}
             className="w-full px-3 py-2 border rounded-lg"
             rows={4}
-            placeholder={STRINGS.messagePlaceholder ?? "Décrivez l\u0027alerte"}
+            placeholder={STRINGS.messagePlaceholder ?? "Décrivez l'alerte"}
           />
         </div>
       </div>
@@ -253,7 +253,7 @@ export function PlanningAlertsPanel() {
       setForm({ project_id: "", phase_id: "", type: "delay", severity: "medium", message: "" });
       setPhases([]);
     } catch (err: any) {
-      setError(err?.message || "Erreur lors de la création de l\u0027alerte");
+      setError(err?.message || "Erreur lors de la création de l'alerte");
     } finally {
       setLoading(false);
     }

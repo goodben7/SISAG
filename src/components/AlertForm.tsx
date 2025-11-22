@@ -76,7 +76,7 @@ export function AlertForm({ onClose, onCreated }: Props) {
       setSuccess(STRINGS.successAlertCreated);
       onCreated();
     } catch (err) {
-      const msg = (err as any)?.message || "Erreur lors de la cr\u00e9ation de l\u0027alerte.";
+      const msg = (err as any)?.message || "Erreur lors de la création de l'alerte.";
       setError(msg);
     } finally {
       setLoading(false);

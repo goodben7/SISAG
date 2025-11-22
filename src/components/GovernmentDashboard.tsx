@@ -13,6 +13,7 @@ import { getProjects, getAlerts, getReports } from '../lib/api';
 import PhaseGantt from './PhaseGantt';
 import AlignmentChecklist from './AlignmentChecklist';
 import { PlanningAlertsPanel } from './PlanningAlertsPanel';
+import AdditionalIndicators from './AdditionalIndicators';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -222,6 +223,10 @@ export function GovernmentDashboard() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="mb-8">
+          <AdditionalIndicators projects={projects} alerts={alerts} />
         </div>
 
         <div className="mb-8">

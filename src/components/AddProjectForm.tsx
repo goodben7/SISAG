@@ -171,7 +171,7 @@ const created = await createProject(rest);
       await refreshObjectives();
       setSelectedObjectives(prev => ({ ...prev, [created.id]: 1 }));
     } catch (err: any) {
-      setError(err?.message || "Impossible de créer l\u0027objectif.");
+      setError(err?.message || "Impossible de créer l'objectif.");
     }
   };
 

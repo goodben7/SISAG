@@ -116,7 +116,7 @@ export function AlignmentChecklist({ projectId }: AlignmentChecklistProps) {
       const res = await getProjectAlignment(projectId);
       setData(res || null);
     } catch (e: any) {
-      setError(e?.message || "Erreur d\u0027alignement");
+      setError(e?.message || "Erreur d'alignement");
     } finally {
       setLoading(false);
     }
