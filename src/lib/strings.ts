@@ -14,6 +14,8 @@ export interface UiStrings {
   endDateLabel: string;
   // Alertes
   addAlertTitle: string;
+  addPlanningAlertTitle: string;
+  addPlanningAlertLabel: string;
   projectLabel: string;
   selectProjectPlaceholder: string;
   typeLabel: string;
@@ -96,6 +98,8 @@ export const STRINGS = {
   endDateLabel: "Date de fin*",
   // Alertes
   addAlertTitle: "Ajouter une alerte",
+  addPlanningAlertTitle: "Ajouter une alerte de planification",
+  addPlanningAlertLabel: "Ajouter une alerte de planification",
   projectLabel: "Projet*",
   selectProjectPlaceholder: "Sélectionnez un projet",
   typeLabel: "Type*",

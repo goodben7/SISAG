@@ -81,8 +81,8 @@ export function GovernmentDashboard() {
 
   const ALERT_SEVERITY_COLORS = {
     low: 'bg-rdcBlueLight text-rdcBlue border-rdcBlueLight',
-    medium: 'bg-rdcYellowLight text-rdcYellow border-rdcYellowLight',
-    high: 'bg-rdcYellowLight text-rdcYellow border-rdcYellowLight',
+    medium: 'bg-rdcYellowLight text-black border-rdcYellowLight',
+    high: 'bg-rdcYellowLight text-black border-rdcYellowLight',
     critical: 'bg-rdcRedLight text-rdcRed border-rdcRedLight'
   };
 
