@@ -114,14 +114,14 @@ export function AlertForm({ onClose, onCreated }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.typeLabel}</label>
             <select name="type" value={form.type} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg">
-              {ALERT_TYPES.map((t) => (<option key={t} value={t}>{t.replace("_"," ")}</option>))}
+              {ALERT_TYPES.map((t) => (<option key={t} value={t}>{STRINGS.alertTypeLabels[t]}</option>))}
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.severityLabel}</label>
             <select name="severity" value={form.severity} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg">
-              {SEVERITIES.map((s) => (<option key={s} value={s}>{s}</option>))}
+              {SEVERITIES.map((s) => (<option key={s} value={s}>{STRINGS.alertSeverityLabels[s]}</option>))}
             </select>
           </div>
 

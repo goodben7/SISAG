@@ -14,11 +14,7 @@ const SEVERITY_COLORS: Record<PlanningAlert["severity"], string> = {
   critical: "bg-rdcRedLight text-rdcRed"
 };
 
-const TYPE_LABELS: Record<PlanningAlert["type"], string> = {
-  delay: "Retard",
-  blocked: "Bloqué",
-  budget_drift: "Dérive budgétaire"
-};
+
 
 function formatDateTimeFR(iso: string) {
   return new Date(iso).toLocaleString("fr-FR");
@@ -42,7 +38,7 @@ function AlertList({ alerts }: { alerts: PlanningAlert[] }) {
       {alerts.map((a) => (
         <div key={a.id} className={`border rounded-lg p-4 ${SEVERITY_COLORS[a.severity]}`}>
           <div className="flex items-start gap-3">
-            <div className="text-sm font-semibold">{TYPE_LABELS[a.type]}</div>
+            <div className="text-sm font-semibold">{STRINGS.planningAlertTypeLabels[a.type] ?? a.type}</div>
             <div className="flex-1 text-sm">{a.message}</div>
             <div className="text-xs opacity-70">{formatDateTimeFR(a.created_at)}</div>
           </div>
@@ -111,9 +107,14 @@ function AlertCreateForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.typeLabel}</label>
-          <select name="type" value={form.type} onChange={onChange} className="w-full px-3 py-2 border rounded-lg">
-            {Object.keys(TYPE_LABELS).map((t) => (
-              <option key={t} value={t}>{TYPE_LABELS[t as PlanningAlert["type"]]}</option>
+          <select
+            name="type"
+            value={form.type}
+            onChange={onChange}
+            className="w-full px-3 py-2 border rounded-lg"
+          >
+            {Object.keys(STRINGS.planningAlertTypeLabels).map((t) => (
+              <option key={t} value={t}>{STRINGS.planningAlertTypeLabels[t as PlanningAlert["type"]]}</option>
             ))}
           </select>
         </div>
@@ -122,7 +123,7 @@ function AlertCreateForm({
           <label className="block text-sm font-medium text-gray-700 mb-1">{STRINGS.severityLabel}</label>
           <select name="severity" value={form.severity} onChange={onChange} className="w-full px-3 py-2 border rounded-lg">
             {(["low", "medium", "high", "critical"] as PlanningAlert["severity"][]).map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{STRINGS.alertSeverityLabels[s]}</option>
             ))}
           </select>
         </div>

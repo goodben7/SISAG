@@ -26,7 +26,7 @@ const SECTORS = [
   'Eau et assainissement', 'Énergie', 'Transport', 'Autre'
 ];
 
-const STATUSES: ProjectInsert['status'][] = ['planned','in_progress','completed','delayed','cancelled'];
+const STATUSES = ['planned','in_progress','completed','delayed','cancelled'] as const;
 
 export function AddProjectForm({ onClose, onCreated, isModal = true }: Props) {
   const { user, profile } = useAuth();
@@ -240,7 +240,7 @@ const created = await createProject(rest);
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
             <select name="status" value={form.status} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg">
-              {STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}
+              {STATUSES.map((s) => (<option key={s} value={s}>{STRINGS.projectStatusLabels[s] ?? s}</option>))}
             </select>
           </div>
 

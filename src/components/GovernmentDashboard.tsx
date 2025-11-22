@@ -336,7 +336,7 @@ export function GovernmentDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold">{ALERT_TYPE_LABELS[alert.type]}</span>
-                            <span className="text-xs uppercase font-medium">{alert.severity}</span>
+                            <span className="text-xs uppercase font-medium">{STRINGS.alertSeverityLabels[alert.severity]}</span>
                           </div>
                           <p className="text-sm">{alert.message}</p>
                           <p className="text-xs mt-2 opacity-75">

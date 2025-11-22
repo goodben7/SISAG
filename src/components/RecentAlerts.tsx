@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertCircle, Clock } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 import { getAlerts } from '../lib/api';
+import { STRINGS } from '../lib/strings';
 
 type Alert = Database['public']['Tables']['alerts']['Row'];
 
@@ -28,7 +29,7 @@ export function RecentAlerts({ refreshKey = 0 }: { refreshKey?: number }) {
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 text-rdcRed mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-rdcTextPrimary">{a.type.replace('_',' ')}</p>
+                  <p className="text-sm font-semibold text-rdcTextPrimary">{STRINGS.alertTypeLabels[a.type]} <span className="text-xs font-medium text-rdcGrayText">· {STRINGS.alertSeverityLabels[a.severity]}</span></p>
                   <p className="text-sm text-rdcGrayText line-clamp-2">{a.message}</p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><Clock className="w-3 h-3"/> {new Date(a.created_at).toLocaleDateString('fr-FR')}</p>
                 </div>

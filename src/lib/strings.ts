@@ -27,6 +27,9 @@ export interface UiStrings {
   phaseLabel: string;
   selectPhasePlaceholder: string;
   selectPhaseOptional: string;
+  alertTypeLabels: Record<string, string>;
+  alertSeverityLabels: Record<string, string>;
+  planningAlertTypeLabels: Record<string, string>;
   // Phases
   phasesGanttTitle: string;
   addPhaseLabel: string;
@@ -36,6 +39,8 @@ export interface UiStrings {
   actualStartLabel: string;
   actualEndLabel: string;
   statusLabel: string;
+  phaseStatusLabels: Record<string, string>;
+  projectStatusLabels: Record<string, string>;
   editLabel: string;
   deleteLabel: string;
   deletePhaseConfirm: string;
@@ -87,7 +92,7 @@ export const STRINGS = {
   typeLabel: "Type*",
   severityLabel: "Sévérité*",
   messageLabel: "Message*",
-  messagePlaceholder: "Décrivez l'alerte",
+  messagePlaceholder: "Décrivez l\u0027alerte",
   errorNoRightsAlert: "Vous n’avez pas les droits pour créer une alerte.",
   errorSelectProjectMessage: "Veuillez sélectionner un projet et saisir un message.",
   successAlertCreated: "Alerte créée avec succès.",
@@ -95,6 +100,9 @@ export const STRINGS = {
   phaseLabel: "Phase",
   selectPhasePlaceholder: "Sélectionner une phase",
   selectPhaseOptional: "Sélectionnez une phase (optionnel)",
+  alertTypeLabels: { budget_overrun: "Dépassement de budget", delay: "Retard", milestone_missed: "Jalon non atteint" },
+  alertSeverityLabels: { low: "Faible", medium: "Moyenne", high: "Élevée", critical: "Critique" },
+  planningAlertTypeLabels: { delay: "Retard", blocked: "Blocage", budget_drift: "Dérive budgétaire" },
   // Phases
   phasesGanttTitle: "Phases du projet",
   addPhaseLabel: "Ajouter une phase",
@@ -104,6 +112,8 @@ export const STRINGS = {
   actualStartLabel: "Début réel",
   actualEndLabel: "Fin réelle",
   statusLabel: "Statut",
+  phaseStatusLabels: { planned: "Planifiée", in_progress: "En cours", completed: "Terminée", blocked: "Bloquée" },
+  projectStatusLabels: { planned: "Planifié", in_progress: "En cours", completed: "Terminé", delayed: "En retard", cancelled: "Annulé" },
   editLabel: "Modifier",
   deleteLabel: "Supprimer",
   deletePhaseConfirm: "Supprimer cette phase ?",

@@ -224,7 +224,7 @@ export default function AdditionalIndicators({ projects, alerts }: Props) {
               {severityLevels.map((s) => (
                 <div key={`g-${s}`} className="flex items-center gap-2 mb-1">
                   <span className={`inline-block w-3 h-3 rounded ${s === "critical" ? "bg-red-600" : s === "high" ? "bg-orange-500" : s === "medium" ? "bg-yellow-400" : "bg-blue-500"}`}></span>
-                  <span className="text-gray-700 capitalize">{s}</span>
+                  <span className="text-gray-700">{STRINGS.alertSeverityLabels[s]}</span>
                   <span className="ml-auto font-semibold">{alertSeverityCounts[s]}</span>
                 </div>
               ))}
@@ -234,7 +234,7 @@ export default function AdditionalIndicators({ projects, alerts }: Props) {
               {severityLevels.map((s) => (
                 <div key={`p-${s}`} className="flex items-center gap-2 mb-1">
                   <span className={`inline-block w-3 h-3 rounded ${s === "critical" ? "bg-red-600" : s === "high" ? "bg-orange-500" : s === "medium" ? "bg-yellow-400" : "bg-blue-500"}`}></span>
-                  <span className="text-gray-700 capitalize">{s}</span>
+                  <span className="text-gray-700">{STRINGS.alertSeverityLabels[s]}</span>
                   <span className="ml-auto font-semibold">{planningSeverityCounts[s]}</span>
                 </div>
               ))}

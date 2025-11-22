@@ -56,7 +56,7 @@ function PhaseForm({ form, onChange, onSubmit }: {
             className="w-full px-3 py-2 border rounded-lg"
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{STRINGS.phaseStatusLabels[s]}</option>
             ))}
           </select>
         </div>
@@ -131,7 +131,7 @@ function PhaseItem({ phase, minStart, total, onFieldChange, onSave, onDelete }: 
     <div className="border rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium text-sm text-gray-900">{phase.name}</div>
-        <span className="text-xs text-gray-600">{phase.status}</span>
+        <span className="text-xs text-gray-600">{STRINGS.phaseStatusLabels[phase.status]}</span>
       </div>
 
       <div className="relative w-full h-3 bg-gray-200 rounded">
@@ -151,7 +151,7 @@ function PhaseItem({ phase, minStart, total, onFieldChange, onSave, onDelete }: 
           onChange={(e) => onFieldChange(phase.id, "status", e.target.value as Phase["status"])}
         >
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{STRINGS.phaseStatusLabels[s]}</option>
           ))}
         </select>
         <input
