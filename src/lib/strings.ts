@@ -60,6 +60,14 @@ export interface UiStrings {
   titleLabel: string;
   levelLabel: string;
   sectorLabel: string;
+  // Aide et explications
+  alignmentHelp: string;
+  weightHelp: string;
+  redundancyHelp: string;
+  viewDetailsLabel: string;
+  objectiveDetailsTitle: string;
+  indicatorsLabel: string;
+  learnMoreLabel: string;
   // Indicateurs supplémentaires
   additionalIndicatorsTitle: string;
   alignmentTitle: string;
@@ -124,7 +132,7 @@ export const STRINGS = {
   objectivesLabel: "Objectifs liés",
   weightLabel: "Poids",
   suggestionsLabel: "Suggestions",
-  emptyAlignmentLabel: "Aucune donnée d'alignement.",
+  emptyAlignmentLabel: "Aucune donnée d\u0027alignement.",
   addObjectiveLabel: "Ajouter",
   unlinkObjectiveLabel: "Retirer",
   pagObjectivesLabel: "Objectifs PAG (optionnel)",
@@ -133,6 +141,13 @@ export const STRINGS = {
   titleLabel: "Titre",
   levelLabel: "Niveau",
   sectorLabel: "Secteur",
+  alignmentHelp: "Ce score reflète la contribution du projet aux objectifs nationaux du PAG.",
+  weightHelp: "Le poids (1 à 5) indique le niveau de contribution du projet aux indicateurs de l\u0027objectif.",
+  redundancyHelp: "Nombre de fois où ce projet est comptabilisé dans différents objectifs.",
+  viewDetailsLabel: "Voir les détails",
+  objectiveDetailsTitle: "Détails de l\u0027objectif",
+  indicatorsLabel: "Indicateurs",
+  learnMoreLabel: "En savoir plus",
   // Indicateurs supplémentaires
   additionalIndicatorsTitle: "Indicateurs supplémentaires",
   alignmentTitle: "Alignement au PAG",
@@ -145,3 +160,7 @@ export const STRINGS = {
 } as const;
 
 export type StringKey = keyof typeof STRINGS;
+
+export function normalizeApostrophes(s: string): string {
+  return s.replace(/\\u0027/g, "'").replace(/u0027/g, "'");
+}

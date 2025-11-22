@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { Phase } from "../lib/api";
 import { getProjectPhases, createPhase, updatePhase, deletePhase } from "../lib/api";
 import { STRINGS } from "../lib/strings";
+import PhaseTimeline from "./PhaseTimeline";
+import PhaseCard from "./PhaseCard";
 
 function parseDate(d: string | null): number | null {
   if (!d) return null;
@@ -9,16 +11,8 @@ function parseDate(d: string | null): number | null {
   return isNaN(t) ? null : t;
 }
 
-const STATUS_COLORS: Record<Phase["status"], string> = {
-  planned: "bg-gray-400",
-  in_progress: "bg-blue-500",
-  completed: "bg-green-500",
-  blocked: "bg-red-500"
-};
 
-function statusColor(status: Phase["status"]) {
-  return STATUS_COLORS[status] ?? "bg-gray-400";
-}
+
 
 const STATUSES: Phase["status"][] = ["planned", "in_progress", "completed", "blocked"];
 
@@ -114,82 +108,8 @@ function PhaseForm({ form, onChange, onSubmit }: {
   );
 }
 
-function PhaseItem({ phase, minStart, total, onFieldChange, onSave, onDelete }: {
-  phase: Phase;
-  minStart: number | null;
-  total: number;
-  onFieldChange: (id: string, field: keyof Phase, value: any) => void;
-  onSave: (p: Phase) => void;
-  onDelete: (p: Phase) => void;
-}) {
-  const pStart = parseDate(phase.planned_start) ?? parseDate(phase.actual_start) ?? minStart;
-  const pEnd = parseDate(phase.planned_end) ?? parseDate(phase.actual_end) ?? pStart;
-  const left = minStart !== null && pStart !== null ? Math.max(0, Math.min(100, ((pStart - minStart) / total) * 100)) : 0;
-  const width = pEnd !== null && pStart !== null ? Math.max(2, Math.min(100, ((pEnd - pStart) / total) * 100)) : 5;
-
-  return (
-    <div className="border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-medium text-sm text-gray-900">{phase.name}</div>
-        <span className="text-xs text-gray-600">{STRINGS.phaseStatusLabels[phase.status]}</span>
-      </div>
-
-      <div className="relative w-full h-3 bg-gray-200 rounded">
-        <div className={`absolute h-3 rounded ${statusColor(phase.status)}`} style={{ left: `${left}%`, width: `${width}%` }} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-3">
-        <input
-          className="px-2 py-1 border rounded text-sm"
-          value={phase.name}
-          onChange={(e) => onFieldChange(phase.id, "name", e.target.value)}
-          placeholder={STRINGS.phaseNameLabel}
-        />
-        <select
-          className="px-2 py-1 border rounded text-sm"
-          value={phase.status}
-          onChange={(e) => onFieldChange(phase.id, "status", e.target.value as Phase["status"])}
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>{STRINGS.phaseStatusLabels[s]}</option>
-          ))}
-        </select>
-        <input
-          type="date"
-          className="px-2 py-1 border rounded text-sm"
-          value={phase.planned_start ?? ""}
-          onChange={(e) => onFieldChange(phase.id, "planned_start", e.target.value || null)}
-        />
-        <input
-          type="date"
-          className="px-2 py-1 border rounded text-sm"
-          value={phase.planned_end ?? ""}
-          onChange={(e) => onFieldChange(phase.id, "planned_end", e.target.value || null)}
-        />
-        <input
-          type="date"
-          className="px-2 py-1 border rounded text-sm"
-          value={phase.actual_start ?? ""}
-          onChange={(e) => onFieldChange(phase.id, "actual_start", e.target.value || null)}
-        />
-        <input
-          type="date"
-          className="px-2 py-1 border rounded text-sm"
-          value={phase.actual_end ?? ""}
-          onChange={(e) => onFieldChange(phase.id, "actual_end", e.target.value || null)}
-        />
-      </div>
-
-      <div className="flex justify-end gap-2 mt-3">
-        <button className="px-3 py-1 rounded bg-blue-600 text-white text-sm" onClick={() => onSave(phase)}>
-          {STRINGS.saveLabel}
-        </button>
-        <button className="px-3 py-1 rounded border text-sm" onClick={() => onDelete(phase)}>
-          {STRINGS.deleteLabel}
-        </button>
-      </div>
-    </div>
-  );
+function PhaseItem({ phase, onFieldChange, onSave, onDelete }: { phase: Phase; onFieldChange: (id: string, field: keyof Phase, value: any) => void; onSave: (p: Phase) => void; onDelete: (p: Phase) => void; }) {
+  return <PhaseCard phase={phase} onFieldChange={onFieldChange} onSave={onSave} onDelete={onDelete} />;
 }
 
 export function PhaseGantt({ projectId }: { projectId: string }) {
@@ -316,7 +236,7 @@ export function PhaseGantt({ projectId }: { projectId: string }) {
     .filter((v): v is number => v !== null);
   const minStart = starts.length ? Math.min(...starts) : null;
   const maxEnd = ends.length ? Math.max(...ends) : null;
-  const total = minStart !== null && maxEnd !== null ? Math.max(maxEnd - minStart, 1) : 1;
+
 
   return (
     <div className="space-y-6">
@@ -328,12 +248,13 @@ export function PhaseGantt({ projectId }: { projectId: string }) {
         <div className="text-sm text-gray-600">{STRINGS.noPhases}</div>
       ) : (
         <div className="space-y-4">
+          {minStart !== null && maxEnd !== null && (
+            <PhaseTimeline phases={phases} />
+          )}
           {phases.map((p) => (
             <PhaseItem
               key={p.id}
               phase={p}
-              minStart={minStart}
-              total={total}
               onFieldChange={onPhaseFieldChange}
               onSave={onSavePhase}
               onDelete={onDeletePhase}

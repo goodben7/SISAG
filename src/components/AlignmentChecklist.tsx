@@ -1,36 +1,34 @@
 import { useEffect, useState } from "react";
-import { getProjectAlignment, updateProjectObjectiveWeight, unlinkProjectObjective, linkProjectObjective } from "../lib/api";
+import { getProjectAlignment, linkProjectObjective } from "../lib/api";
 import type { AlignmentResult, AlignmentObjective } from "../lib/api";
 import { STRINGS } from "../lib/strings";
 import { useAuth } from "../contexts/AuthContext";
+import RadialGauge from "./RadialGauge";
+import ObjectiveCard from "./ObjectiveCard";
+import { Info } from "lucide-react";
+import PagInfoModal from "./PagInfoModal";
 
 type AlignmentChecklistProps = { projectId: string };
 
-function ScoreBar({ score, redundancy }: { score: number; redundancy: number }) {
+function ScoreBar({ score, redundancy, onInfo }: { score: number; redundancy: number; onInfo: () => void }) {
+  const [animatedValue, setAnimatedValue] = useState(0);
+  useEffect(() => { const t = setTimeout(() => setAnimatedValue(score), 150); return () => clearTimeout(t); }, [score]);
+  const desc = score >= 80 ? "Excellent alignement avec les priorités nationales" : score >= 50 ? "Alignement modéré avec les priorités nationales" : "Alignement faible, à renforcer";
+  const badgeClass = score >= 80 ? "bg-green-50 text-green-700 border-green-200" : score >= 50 ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-red-50 text-red-700 border-red-200";
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-24">
-        <div className="w-full bg-gray-200 rounded h-3">
-          <div
-            className="h-3 rounded bg-blue-600"
-            style={{ width: `${score}%` }}
-            role="progressbar"
-            aria-valuenow={score}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={STRINGS.scoreLabel}
-          />
-        </div>
-        <div className="text-xs text-gray-600 mt-1">{STRINGS.scoreLabel}: {score}%</div>
+    <div className="flex items-center gap-6">
+      <RadialGauge value={animatedValue} size={80} valueFontPx={16} />
+      <div className="text-sm text-gray-700">
+
+        <div className={`inline-flex items-center mt-1 text-xs px-2 py-1 rounded border ${badgeClass}`}>{desc}</div>
+
+        <div className="flex items-center gap-1 text-xs text-gray-500 mt-2" title={STRINGS.redundancyHelp}><Info className="w-4 h-4" aria-hidden="true" />{STRINGS.redundancyLabel}: {redundancy}</div>
+        <button onClick={onInfo} className="mt-2 text-xs px-2 py-1 rounded border hover:bg-gray-50">{STRINGS.learnMoreLabel}</button>
       </div>
-      <div className="text-xs text-gray-500">{STRINGS.redundancyLabel}: {redundancy}</div>
     </div>
   );
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
-  return <span className="inline-flex items-center rounded bg-gray-100 text-gray-700 text-xs px-2 py-1">{children}</span>;
-}
 
 function ObjectiveList({ objectives, projectId, canEdit, onChanged }: { objectives: AlignmentObjective[]; projectId: string; canEdit: boolean; onChanged: () => void }) {
   if (!objectives || objectives.length === 0) {
@@ -39,38 +37,11 @@ function ObjectiveList({ objectives, projectId, canEdit, onChanged }: { objectiv
   return (
     <div>
       <h4 className="text-sm font-semibold text-gray-900 mb-2">{STRINGS.objectivesLabel}</h4>
-      <ul className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {objectives.map((o) => (
-          <li key={o.id} className="flex items-center justify-between text-sm">
-            <div>
-              <span className="font-medium">{o.code}</span> — {o.title}
-              <span className="ml-2 text-xs text-gray-500">({o.level})</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge>{STRINGS.weightLabel}: {o.weight}</Badge>
-              {canEdit && (
-                <select
-                  value={o.weight}
-                  onChange={async (e) => {
-                    const w = Number(e.target.value);
-                    try { await updateProjectObjectiveWeight(projectId, o.id, w); onChanged(); } catch {}
-                  }}
-                  className="px-2 py-1 border rounded text-xs"
-                  aria-label={STRINGS.weightLabel}
-                >
-                  {[1,2,3,4,5].map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
-              )}
-              {canEdit && (
-                <button
-                  onClick={async () => { try { await unlinkProjectObjective(projectId, o.id); onChanged(); } catch {} }}
-                  className="text-xs px-2 py-1 rounded border hover:bg-gray-50"
-                >{STRINGS.unlinkObjectiveLabel}</button>
-              )}
-            </div>
-          </li>
+          <ObjectiveCard key={o.id} projectId={projectId} objective={o} canEdit={canEdit} onChanged={onChanged} />
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -108,6 +79,10 @@ export function AlignmentChecklist({ projectId }: AlignmentChecklistProps) {
   const [data, setData] = useState<AlignmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filterLevel, setFilterLevel] = useState<'all'|'national'|'provincial'|'territorial'>('all');
+  const [filterText, setFilterText] = useState<string>('');
+  const [infoOpen, setInfoOpen] = useState(false);
+  const levelStyles = { all: "bg-gray-100 border-gray-300 text-gray-700", national: "bg-blue-50 border-blue-600 text-blue-700", provincial: "bg-green-50 border-green-600 text-green-700", territorial: "bg-yellow-50 border-yellow-600 text-yellow-700" } as const;
 
   const refresh = async () => {
     setLoading(true);
@@ -137,12 +112,34 @@ export function AlignmentChecklist({ projectId }: AlignmentChecklistProps) {
   const redundancyCount = data.redundancy?.similarProjects ?? 0;
   const objectives = Array.isArray(data.objectives) ? data.objectives : [];
   const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+  const q = filterText.trim().toLowerCase();
+  const filteredObjectives = objectives.filter(o => (filterLevel === 'all' ? true : o.level === filterLevel) && (q === '' ? true : (o.code.toLowerCase().includes(q) || o.title.toLowerCase().includes(q))));
+  const filteredSuggestions = suggestions.filter(s => (filterLevel === 'all' ? true : s.level === filterLevel) && (q === '' ? true : (s.code.toLowerCase().includes(q) || s.title.toLowerCase().includes(q))));
 
   return (
     <div className="space-y-4">
-      <ScoreBar score={data.score} redundancy={redundancyCount} />
-      <ObjectiveList objectives={objectives} projectId={projectId} canEdit={canEdit} onChanged={refresh} />
-      <SuggestionsList suggestions={suggestions} projectId={projectId} canEdit={canEdit} onChanged={refresh} />
+      <ScoreBar score={data.score} redundancy={redundancyCount} onInfo={() => setInfoOpen(true)} />
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1" role="tablist" aria-label="Filtrer par niveau">
+          {(['all','national','provincial','territorial'] as const).map((lvl) => (
+            <button
+              key={lvl}
+              onClick={() => setFilterLevel(lvl)}
+              role="tab"
+              aria-selected={filterLevel === lvl}
+              className={`text-xs px-2 py-1 rounded border ${filterLevel === lvl ? levelStyles[lvl] : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            >
+              {{ all: 'Tous niveaux', national: 'National', provincial: 'Provincial', territorial: 'Territorial' }[lvl]}
+            </button>
+          ))}
+        </div>
+        <input className="px-2 py-1 border rounded text-xs" placeholder="Rechercher un objectif PAG..." value={filterText} onChange={(e) => setFilterText(e.target.value)} aria-label="Rechercher par code ou titre" />
+      </div>
+
+      <ObjectiveList objectives={filteredObjectives} projectId={projectId} canEdit={canEdit} onChanged={refresh} />
+      <SuggestionsList suggestions={filteredSuggestions} projectId={projectId} canEdit={canEdit} onChanged={refresh} />
+      <PagInfoModal isOpen={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   );
 }
