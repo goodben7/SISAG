@@ -153,11 +153,12 @@ export default function AdditionalIndicators({ projects, alerts }: Props) {
     const map: Record<string, number> = {};
     months.forEach(m => { map[m.key] = 0; });
     const allDates = [
-      ...alerts.map(a => a.created_at),
-      ...planningAlerts.map(a => a.created_at)
-    ];
+      ...alerts.map(a => (a as any).created_at ?? (a as any).createdAt ?? null),
+      ...planningAlerts.map(a => (a as any).created_at ?? (a as any).createdAt ?? null)
+    ].filter(Boolean) as string[];
     for (const ts of allDates) {
       const d = new Date(ts);
+      if (isNaN(d.getTime())) continue;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (key in map) map[key]++;
     }
@@ -362,18 +363,22 @@ export default function AdditionalIndicators({ projects, alerts }: Props) {
               <p className="text-xs text-gray-500">6 derniers mois</p>
             </div>
           </div>
-          <div className="flex items-end gap-2 h-32">
-            {months.map((m, idx) => {
-              const count = monthlyCounts[idx];
-              const height = monthlyMax > 0 ? (count / monthlyMax) * 100 : 0;
-              return (
-                <div key={m.key} className="flex flex-col items-center justify-end w-10">
-                  <div className="w-6 bg-blue-600 rounded-sm" style={{ height: `${height}%` }}></div>
-                  <span className="mt-1 text-xs text-gray-600">{m.label}</span>
-                </div>
-              );
-            })}
-          </div>
+          {monthlyMax === 0 ? (
+            <div className="h-32 flex items-center justify-center text-sm text-gray-500">Aucune alerte sur les 6 derniers mois</div>
+          ) : (
+            <div className="flex items-end gap-2 h-32">
+              {months.map((m, idx) => {
+                const count = monthlyCounts[idx];
+                const height = monthlyMax > 0 ? (count / monthlyMax) * 100 : 0;
+                return (
+                  <div key={m.key} className="flex flex-col items-center justify-end w-10">
+                    <div className="w-6 bg-blue-600 rounded-sm" style={{ height: `${height}%` }}></div>
+                    <span className="mt-1 text-xs text-gray-600">{m.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <p className="text-xs text-gray-500 mt-2">Max: {monthlyMax}</p>
         </div>
 
