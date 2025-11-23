@@ -404,7 +404,7 @@ export function GovernmentDashboard() {
             )}
 
             {selectedTab === 'actions' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="col-span-1 md:col-span-2 flex items-center gap-2">
                   <label className="text-sm text-gray-700">Projet</label>
                   <select
@@ -433,7 +433,7 @@ export function GovernmentDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white border rounded-lg p-4">
+                    <div className="bg-white border rounded-lg p-4 col-span-1 md:col-span-2">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Actions — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
                       {selectedProjectId && (
                         <ProjectActionsPanel
