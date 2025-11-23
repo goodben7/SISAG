@@ -349,6 +349,19 @@ export function GovernmentDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {selectedProjectId ? (
                   <>
+                    <div className="col-span-1 md:col-span-2 border-2 border-blue-500 ring-1 ring-blue-200 rounded-lg p-4 bg-white">
+                      <h4 className="text-sm font-semibold text-blue-700 mb-1">Projet sélectionné</h4>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{projects.find(p => p.id === selectedProjectId)?.title || ''}</p>
+                          <p className="text-sm text-gray-600">{projects.find(p => p.id === selectedProjectId)?.province || ''} - {projects.find(p => p.id === selectedProjectId)?.sector || ''}</p>
+                        </div>
+                        <div className="text-sm text-gray-700">
+                          <span className="mr-4">Budget: <span className="font-semibold">{formatCurrency(Number(projects.find(p => p.id === selectedProjectId)?.budget || 0))}</span></span>
+                          <span>Dépensé: <span className="font-semibold">{formatCurrency(Number(projects.find(p => p.id === selectedProjectId)?.spent || 0))}</span></span>
+                        </div>
+                      </div>
+                    </div>
                     <div className="bg-white border rounded-lg p-4">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
                       <PhaseGantt projectId={selectedProjectId} />
