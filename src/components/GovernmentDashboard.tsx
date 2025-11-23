@@ -14,6 +14,7 @@ import PhaseGantt from './PhaseGantt';
 import AlignmentChecklist from './AlignmentChecklist';
 import { PlanningAlertsPanel } from './PlanningAlertsPanel';
 import AdditionalIndicators from './AdditionalIndicators';
+import MaturityDashboard from './MaturityDashboard';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -24,7 +25,7 @@ export function GovernmentDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'alerts' | 'reports'>('overview');
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'maturity' | 'alerts' | 'reports'>('overview');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -248,6 +249,16 @@ export function GovernmentDashboard() {
                 Vue d'ensemble
               </button>
               <button
+                onClick={() => setSelectedTab('maturity')}
+                className={`px-6 py-4 font-medium transition-colors ${
+                  selectedTab === 'maturity'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Évaluation de maturité
+              </button>
+              <button
                 onClick={() => setSelectedTab('alerts')}
                 className={`px-6 py-4 font-medium transition-colors relative ${
                   selectedTab === 'alerts'
@@ -333,6 +344,11 @@ export function GovernmentDashboard() {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+            {selectedTab === 'maturity' && (
+              <div className="space-y-6">
+                <MaturityDashboard projects={projects} />
               </div>
             )}
 

@@ -129,3 +129,35 @@ export async function updatePhase(projectId: string, phaseId: string, payload: P
 export async function deletePhase(projectId: string, phaseId: string) {
   return request(`/projects/${projectId}/phases/${phaseId}`, { method: 'DELETE' }) as Promise<{ success: true }>;
 }
+
+// Maturity Assessment
+export type MaturityAssessment = {
+  project_id: string;
+  budget_available: number;
+  disbursement_planned: number;
+  funding_source_confirmed: number;
+  contracts_signed: number;
+  feasibility_study: number;
+  technical_plans_validated: number;
+  documentation_complete: number;
+  governance_defined: number;
+  steering_committee_formed: number;
+  tenders_launched_awarded: number;
+  project_team_available: number;
+  logistics_ready: number;
+  risks_identified: number;
+  pag_alignment_percent: number;
+  attachments: any[];
+};
+export type MaturityResult = {
+  assessment: MaturityAssessment;
+  score: number;
+  dimensions: { financial: number; technical: number; legal: number; operational: number; strategic: number };
+  recommendation: { status: 'ready'|'preparing'|'not_ready'; message: string };
+};
+export async function getProjectMaturity(projectId: string) {
+  return request(`/projects/${projectId}/maturity`, { method: 'GET' }) as Promise<MaturityResult>;
+}
+export async function saveProjectMaturity(projectId: string, payload: Partial<MaturityAssessment>) {
+  return request(`/projects/${projectId}/maturity`, { method: 'POST', body: JSON.stringify(payload) }) as Promise<MaturityResult>;
+}

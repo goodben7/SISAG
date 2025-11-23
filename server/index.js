@@ -40,6 +40,40 @@ app.use(express.json());
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
+// Ensure maturity_assessments table exists even if schema.sql is not updated
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS maturity_assessments (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      project_id TEXT NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
+      budget_available INTEGER NOT NULL DEFAULT 0,
+      disbursement_planned INTEGER NOT NULL DEFAULT 0,
+      funding_source_confirmed INTEGER NOT NULL DEFAULT 0,
+      contracts_signed INTEGER NOT NULL DEFAULT 0,
+      feasibility_study INTEGER NOT NULL DEFAULT 0,
+      technical_plans_validated INTEGER NOT NULL DEFAULT 0,
+      documentation_complete INTEGER NOT NULL DEFAULT 0,
+      governance_defined INTEGER NOT NULL DEFAULT 0,
+      steering_committee_formed INTEGER NOT NULL DEFAULT 0,
+      tenders_launched_awarded INTEGER NOT NULL DEFAULT 0,
+      project_team_available INTEGER NOT NULL DEFAULT 0,
+      logistics_ready INTEGER NOT NULL DEFAULT 0,
+      risks_identified INTEGER NOT NULL DEFAULT 0,
+      pag_alignment_percent REAL NOT NULL DEFAULT 0,
+      attachments TEXT NOT NULL DEFAULT '[]',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TRIGGER IF NOT EXISTS maturity_assessments_updated_at
+    AFTER UPDATE ON maturity_assessments
+    FOR EACH ROW BEGIN
+      UPDATE maturity_assessments SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+    END;
+  `);
+} catch (e) {
+  console.error('[DB] Ensure maturity_assessments failed:', e);
+}
+
 const signToken = (userId) => jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
 
 const getProfileById = (id) => db.prepare('SELECT * FROM profiles WHERE id = ?').get(id);
@@ -349,6 +383,120 @@ app.post('/alerts/planning', requireAuth, requireRole(['government','partner']),
     .run(id, a.project_id, a.phase_id ?? null, a.type, a.severity, a.message);
   const row = db.prepare('SELECT * FROM alerts_planning WHERE id = ?').get(id);
   res.json(row);
+});
+
+// Maturity assessment: compute helper
+function computeMaturityScore(a) {
+  const yes = (v) => Number(v ? 1 : 0);
+  const financialRaw = yes(a.budget_available)*10 + yes(a.disbursement_planned)*10 + yes(a.funding_source_confirmed)*5 + yes(a.contracts_signed)*5; // 30
+  const technicalRaw = yes(a.feasibility_study)*10 + yes(a.technical_plans_validated)*10 + yes(a.documentation_complete)*5; // 25
+  const legalRaw = yes(a.governance_defined)*5 + yes(a.steering_committee_formed)*5 + yes(a.tenders_launched_awarded)*10; // 20
+  const operationalRaw = yes(a.project_team_available)*5 + yes(a.logistics_ready)*5 + yes(a.risks_identified)*5; // 15
+  const strategicPercent = Math.max(0, Math.min(100, Number(a.pag_alignment_percent || 0))); // 0-100
+
+  const financial = Math.round((financialRaw / 30) * 100);
+  const technical = Math.round((technicalRaw / 25) * 100);
+  const legal = Math.round((legalRaw / 20) * 100);
+  const operational = Math.round((operationalRaw / 15) * 100);
+  const strategic = Math.round(strategicPercent);
+
+  const score = Math.round(financial * 0.30 + technical * 0.25 + legal * 0.20 + operational * 0.15 + strategic * 0.10);
+
+  let recommendation = { status: 'not_ready', message: '❌ Projet non prêt. Actions urgentes requises.' };
+  if (score >= 71) recommendation = { status: 'ready', message: '✅ Projet prêt pour exécution. Passer à la phase suivante.' };
+  else if (score >= 41) recommendation = { status: 'preparing', message: '⚠️ Projet en cours de préparation. Voir les blocages ci-dessous.' };
+
+  return { score, dimensions: { financial, technical, legal, operational, strategic }, recommendation };
+}
+
+// GET maturity by project
+app.get('/projects/:id/maturity', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+  const row = db.prepare('SELECT * FROM maturity_assessments WHERE project_id = ?').get(req.params.id);
+  const defaultAssessment = {
+    project_id: req.params.id,
+    budget_available: 0,
+    disbursement_planned: 0,
+    funding_source_confirmed: 0,
+    contracts_signed: 0,
+    feasibility_study: 0,
+    technical_plans_validated: 0,
+    documentation_complete: 0,
+    governance_defined: 0,
+    steering_committee_formed: 0,
+    tenders_launched_awarded: 0,
+    project_team_available: 0,
+    logistics_ready: 0,
+    risks_identified: 0,
+    pag_alignment_percent: 0,
+    attachments: []
+  };
+  const a = row ? { ...row, attachments: JSON.parse(row.attachments || '[]') } : defaultAssessment;
+  const result = computeMaturityScore(a);
+  res.json({ assessment: a, ...result });
+});
+
+// POST/UPSERT maturity by project
+app.post('/projects/:id/maturity', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const p = req.body || {};
+  const clean = (v) => v ? 1 : 0;
+  const payload = {
+    project_id: req.params.id,
+    budget_available: clean(p.budget_available),
+    disbursement_planned: clean(p.disbursement_planned),
+    funding_source_confirmed: clean(p.funding_source_confirmed),
+    contracts_signed: clean(p.contracts_signed),
+    feasibility_study: clean(p.feasibility_study),
+    technical_plans_validated: clean(p.technical_plans_validated),
+    documentation_complete: clean(p.documentation_complete),
+    governance_defined: clean(p.governance_defined),
+    steering_committee_formed: clean(p.steering_committee_formed),
+    tenders_launched_awarded: clean(p.tenders_launched_awarded),
+    project_team_available: clean(p.project_team_available),
+    logistics_ready: clean(p.logistics_ready),
+    risks_identified: clean(p.risks_identified),
+    pag_alignment_percent: Math.max(0, Math.min(100, Number(p.pag_alignment_percent || 0))),
+    attachments: JSON.stringify(p.attachments || [])
+  };
+
+  const existing = db.prepare('SELECT id FROM maturity_assessments WHERE project_id = ?').get(req.params.id);
+  if (existing) {
+    db.prepare(`UPDATE maturity_assessments SET
+      budget_available = ?, disbursement_planned = ?, funding_source_confirmed = ?, contracts_signed = ?,
+      feasibility_study = ?, technical_plans_validated = ?, documentation_complete = ?,
+      governance_defined = ?, steering_committee_formed = ?, tenders_launched_awarded = ?,
+      project_team_available = ?, logistics_ready = ?, risks_identified = ?,
+      pag_alignment_percent = ?, attachments = ?
+      WHERE project_id = ?
+    `).run(
+      payload.budget_available, payload.disbursement_planned, payload.funding_source_confirmed, payload.contracts_signed,
+      payload.feasibility_study, payload.technical_plans_validated, payload.documentation_complete,
+      payload.governance_defined, payload.steering_committee_formed, payload.tenders_launched_awarded,
+      payload.project_team_available, payload.logistics_ready, payload.risks_identified,
+      payload.pag_alignment_percent, payload.attachments,
+      payload.project_id
+    );
+  } else {
+    db.prepare(`INSERT INTO maturity_assessments (
+      project_id, budget_available, disbursement_planned, funding_source_confirmed, contracts_signed,
+      feasibility_study, technical_plans_validated, documentation_complete,
+      governance_defined, steering_committee_formed, tenders_launched_awarded,
+      project_team_available, logistics_ready, risks_identified,
+      pag_alignment_percent, attachments
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(
+      payload.project_id, payload.budget_available, payload.disbursement_planned, payload.funding_source_confirmed, payload.contracts_signed,
+      payload.feasibility_study, payload.technical_plans_validated, payload.documentation_complete,
+      payload.governance_defined, payload.steering_committee_formed, payload.tenders_launched_awarded,
+      payload.project_team_available, payload.logistics_ready, payload.risks_identified,
+      payload.pag_alignment_percent, payload.attachments
+    );
+  }
+  const row = db.prepare('SELECT * FROM maturity_assessments WHERE project_id = ?').get(req.params.id);
+  const a = { ...row, attachments: JSON.parse(row.attachments || '[]') };
+  const result = computeMaturityScore(a);
+  res.json({ assessment: a, ...result });
 });
 
 app.get('/', (req, res) => res.json({ status: 'ok' }));
