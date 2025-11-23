@@ -80,6 +80,11 @@ export interface UiStrings {
   atRiskTitle: string;
   trendTitle: string;
   topSpendersTitle: string;
+  // Maturity additions
+  maturityDimensionDescriptions: Record<string, string>;
+  viewRecommendedActionsLabel: string;
+  viewDocumentLabel: string;
+  maturityTop3BlockingTitle: string;
 }
 
 export const STRINGS = {
@@ -162,7 +167,18 @@ export const STRINGS = {
   underUtilizationLabel: "Sous-utilisation: ",
   atRiskTitle: "Projets à risque",
   trendTitle: "Tendance des alertes",
-  topSpendersTitle: "Secteurs les plus dépensiers"
+  topSpendersTitle: "Secteurs les plus dépensiers",
+  // Maturity additions
+  maturityDimensionDescriptions: {
+    financial: "La maturité financière évalue la disponibilité des fonds, la confirmation des sources et la contractualisation.",
+    technical: "La maturité technique vérifie l’existence de l’étude de faisabilité, des plans validés et d’une documentation complète.",
+    legal: "La maturité juridique et administrative couvre la gouvernance, le comité de pilotage et les appels d’offres.",
+    operational: "La maturité opérationnelle porte sur l’équipe, la logistique et l’identification des risques.",
+    strategic: "La maturité stratégique mesure l’alignement du projet avec le PAG (Objectifs nationaux)."
+  },
+  viewRecommendedActionsLabel: "Voir les actions recommandées",
+  viewDocumentLabel: "Voir le document",
+  maturityTop3BlockingTitle: "Top 3 des critères bloquants"
 } as const;
 
 export type StringKey = keyof typeof STRINGS;

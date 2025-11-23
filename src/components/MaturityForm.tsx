@@ -120,7 +120,6 @@ export default function MaturityForm({ projectId, initial, onSaved }: Props) {
           disabled={saving}
           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
         >{saving ? "Enregistrement..." : "Enregistrer"}</button>
-        <span className="text-sm text-gray-500">Les recommandations seront mises à jour automatiquement après l\u0027enregistrement.</span>
       </div>
     </div>
   );

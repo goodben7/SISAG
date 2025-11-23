@@ -22,14 +22,18 @@ export default function RadialGauge({ value, size = 160, thickness = 12, label, 
     else color = "#DC143C"; // Rouge (mauvais alignement)
   }
 
+  const cx = size / 2;
+  const cy = size / 2;
+
+
   return (
     <div className="inline-flex flex-col items-center justify-center" aria-label={label || "Jauge"} role="img">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={radius} stroke="#E5E7EB" strokeWidth={thickness} fill="none" />
+          <circle cx={cx} cy={cy} r={radius} stroke="#E5E7EB" strokeWidth={thickness} fill="none" />
           <circle
-            cx={size / 2}
-            cy={size / 2}
+            cx={cx}
+            cy={cy}
             r={radius}
             stroke={color}
             strokeWidth={thickness}
@@ -39,6 +43,7 @@ export default function RadialGauge({ value, size = 160, thickness = 12, label, 
             strokeDashoffset={offset}
             style={{ transition: "stroke-dashoffset 1s ease" }}
           />
+
         </svg>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="font-extrabold text-gray-900" style={{ fontSize: valueFontPx }}>{clamped.toFixed(0)}%</div>
