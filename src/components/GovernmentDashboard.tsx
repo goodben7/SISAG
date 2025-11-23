@@ -25,7 +25,7 @@ export function GovernmentDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'maturity' | 'alerts' | 'reports'>('overview');
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'maturity' | 'phasesAlignment' | 'alerts' | 'reports'>('overview');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -171,61 +171,64 @@ export function GovernmentDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-green-600" />
+        {selectedTab !== 'overview' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Taux de livraison à temps</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.onTimeRate.toFixed(1)}%</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Taux de livraison à temps</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.onTimeRate.toFixed(1)}%</p>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full bg-green-600 transition-all"
+                  style={{ width: `${stats.onTimeRate}%` }}
+                />
               </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="h-2 rounded-full bg-green-600 transition-all"
-                style={{ width: `${stats.onTimeRate}%` }}
-              />
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-blue-600" />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Budget total</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalBudget)}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Budget total</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalBudget)}</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">
-              Dépensé: <span className="font-semibold text-gray-900">{formatCurrency(stats.totalSpent)}</span>
-            </p>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Utilisation budgétaire</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.budgetUtilization.toFixed(1)}%</p>
-              </div>
+              <p className="text-sm text-gray-600">
+                Dépensé: <span className="font-semibold text-gray-900">{formatCurrency(stats.totalSpent)}</span>
+              </p>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all ${
-                  stats.budgetUtilization > 100 ? 'bg-rdcRed' :
-                  stats.budgetUtilization > 90 ? 'bg-rdcYellow' : 'bg-rdcBlue'
-                }`}
-                style={{ width: `${Math.min(100, stats.budgetUtilization)}%` }}
-              />
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <BarChart3 className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Utilisation budgétaire</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.budgetUtilization.toFixed(1)}%</p>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    stats.budgetUtilization > 100 ? 'bg-rdcRed' :
+                    stats.budgetUtilization > 90 ? 'bg-rdcYellow' : 'bg-rdcBlue'
+                  }`}
+                  style={{ width: `${Math.min(100, stats.budgetUtilization)}%` }}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="mb-8">
           <AdditionalIndicators projects={projects} alerts={alerts} />
@@ -257,6 +260,16 @@ export function GovernmentDashboard() {
                 }`}
               >
                 Évaluation de maturité
+              </button>
+              <button
+                onClick={() => setSelectedTab('phasesAlignment')}
+                className={`px-6 py-4 font-medium transition-colors ${
+                  selectedTab === 'phasesAlignment'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Phases & Alignement
               </button>
               <button
                 onClick={() => setSelectedTab('alerts')}
@@ -292,7 +305,7 @@ export function GovernmentDashboard() {
                   <div
                     key={project.id}
                     className={`border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer ${selectedProjectId === project.id ? 'border-blue-500 ring-1 ring-blue-200' : ''}`}
-                    onClick={() => setSelectedProjectId(prev => prev === project.id ? null : project.id)}
+                    onClick={() => { setSelectedProjectId(project.id); setSelectedTab('phasesAlignment'); }}
                     role="button"
                     aria-pressed={selectedProjectId === project.id}
                     title="Sélectionner ce projet"
@@ -324,31 +337,32 @@ export function GovernmentDashboard() {
                     </div>
                   </div>
                 ))}
-                {projects.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {selectedProjectId ? (
-                      <>
-                        <div className="bg-white border rounded-lg p-4">
-                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
-                          <PhaseGantt projectId={selectedProjectId} />
-                        </div>
-                        <div className="bg-white border rounded-lg p-4">
-                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
-                          <AlignmentChecklist projectId={selectedProjectId} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="col-span-2 bg-white border rounded-lg p-6 text-sm text-gray-600">
-                        {STRINGS.selectProjectForPhasesAlignment}
-                      </div>
-                    )}
-                  </div>
-                )}
+
               </div>
             )}
             {selectedTab === 'maturity' && (
               <div className="space-y-6">
                 <MaturityDashboard projects={projects} />
+              </div>
+            )}
+            {selectedTab === 'phasesAlignment' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {selectedProjectId ? (
+                  <>
+                    <div className="bg-white border rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
+                      <PhaseGantt projectId={selectedProjectId} />
+                    </div>
+                    <div className="bg-white border rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
+                      <AlignmentChecklist projectId={selectedProjectId} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="col-span-2 bg-white border rounded-lg p-6 text-sm text-gray-600">
+                    {STRINGS.selectProjectForPhasesAlignment}
+                  </div>
+                )}
               </div>
             )}
 
