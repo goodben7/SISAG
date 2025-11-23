@@ -169,3 +169,13 @@ CREATE TABLE IF NOT EXISTS alerts_planning (
   message TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Project actions history
+CREATE TABLE IF NOT EXISTS project_actions (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  action_type TEXT NOT NULL CHECK (action_type IN ('status_update','budget_update','field_update')),
+  details TEXT NOT NULL DEFAULT '{}',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

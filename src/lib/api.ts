@@ -46,6 +46,11 @@ export async function getProjects(filters?: { province?: string; sector?: string
 export async function createProject(payload: Omit<Database['public']['Tables']['projects']['Insert'],'created_by'|'images'> & { images?: any[] }) {
   return request('/projects', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Project>;
 }
+export async function updateProject(projectId: string, payload: Partial<Database['public']['Tables']['projects']['Update']>) {
+  return request(`/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify(payload) }) as Promise<Project>;
+}
+export type ProjectAction = { id: string; project_id: string; user_id: string; action_type: 'status_update'|'budget_update'|'field_update'; details: any; created_at: string };
+export async function getProjectActions(projectId: string) { return request(`/projects/${projectId}/actions`, { method: 'GET' }) as Promise<ProjectAction[]>; }
 
 // Alerts
 type Alert = Database['public']['Tables']['alerts']['Row'];

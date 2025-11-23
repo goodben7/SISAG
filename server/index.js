@@ -166,6 +166,52 @@ app.post('/projects', requireAuth, requireRole(['government','partner']), (req, 
   res.json(row);
 });
 
+// Update project fields and log action
+app.patch('/projects/:id', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { id } = req.params;
+  const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Project not found' });
+
+  const p = req.body || {};
+  const allowed = ['status','budget','spent','end_date','actual_end_date','title','description','sector','province','city','latitude','longitude','ministry','responsible_person'];
+  const updates = {};
+  for (const k of allowed) {
+    if (Object.prototype.hasOwnProperty.call(p, k)) {
+      updates[k] = (k === 'budget' || k === 'spent') ? Number(p[k]) : p[k];
+    }
+  }
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+
+  const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  const values = Object.keys(updates).map(k => updates[k]);
+  db.prepare(`UPDATE projects SET ${setClause} WHERE id = ?`).run(...values, id);
+
+  const row = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
+  row.images = JSON.parse(row.images || '[]');
+
+  let action_type = 'field_update';
+  if ('status' in updates) action_type = 'status_update';
+  else if ('budget' in updates || 'spent' in updates) action_type = 'budget_update';
+
+  const details = JSON.stringify({ changed: updates, before: existing });
+  try {
+    db.prepare('INSERT INTO project_actions (project_id, user_id, action_type, details) VALUES (?, ?, ?, ?)')
+      .run(id, req.userId, action_type, details);
+  } catch (e) {
+    console.error('Failed to log project action:', e);
+  }
+
+  res.json(row);
+});
+
+// Get project actions history
+app.get('/projects/:id/actions', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const rows = db.prepare('SELECT * FROM project_actions WHERE project_id = ? ORDER BY created_at DESC LIMIT 100')
+    .all(req.params.id)
+    .map(a => ({ ...a, details: JSON.parse(a.details || '{}') }));
+  res.json(rows);
+});
+
 // Alerts
 app.get('/alerts', (req, res) => {
   const rows = db.prepare('SELECT * FROM alerts ORDER BY created_at DESC LIMIT 50').all();
@@ -206,6 +252,52 @@ app.post('/reports', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM reports WHERE id = ?').get(id);
   row.images = JSON.parse(row.images || '[]');
   res.json(row);
+});
+
+// Update project fields and log action
+app.patch('/projects/:id', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { id } = req.params;
+  const existing = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Project not found' });
+
+  const p = req.body || {};
+  const allowed = ['status','budget','spent','end_date','actual_end_date','title','description','sector','province','city','latitude','longitude','ministry','responsible_person'];
+  const updates = {};
+  for (const k of allowed) {
+    if (Object.prototype.hasOwnProperty.call(p, k)) {
+      updates[k] = (k === 'budget' || k === 'spent') ? Number(p[k]) : p[k];
+    }
+  }
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+
+  const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  const values = Object.keys(updates).map(k => updates[k]);
+  db.prepare(`UPDATE projects SET ${setClause} WHERE id = ?`).run(...values, id);
+
+  const row = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
+  row.images = JSON.parse(row.images || '[]');
+
+  let action_type = 'field_update';
+  if ('status' in updates) action_type = 'status_update';
+  else if ('budget' in updates || 'spent' in updates) action_type = 'budget_update';
+
+  const details = JSON.stringify({ changed: updates, before: existing });
+  try {
+    db.prepare('INSERT INTO project_actions (project_id, user_id, action_type, details) VALUES (?, ?, ?, ?)')
+      .run(id, req.userId, action_type, details);
+  } catch (e) {
+    console.error('Failed to log project action:', e);
+  }
+
+  res.json(row);
+});
+
+// Get project actions history
+app.get('/projects/:id/actions', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const rows = db.prepare('SELECT * FROM project_actions WHERE project_id = ? ORDER BY created_at DESC LIMIT 100')
+    .all(req.params.id)
+    .map(a => ({ ...a, details: JSON.parse(a.details || '{}') }));
+  res.json(rows);
 });
 
 // Collaborative: profiles, events, messages

@@ -15,6 +15,7 @@ import AlignmentChecklist from './AlignmentChecklist';
 import { PlanningAlertsPanel } from './PlanningAlertsPanel';
 import AdditionalIndicators from './AdditionalIndicators';
 import MaturityDashboard from './MaturityDashboard';
+import ProjectActionsPanel from './ProjectActionsPanel';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Alert = Database['public']['Tables']['alerts']['Row'];
@@ -25,7 +26,7 @@ export function GovernmentDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'maturity' | 'phasesAlignment' | 'alerts' | 'reports'>('overview');
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'maturity' | 'phasesAlignment' | 'actions' | 'alerts' | 'reports'>('overview');
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -272,6 +273,16 @@ export function GovernmentDashboard() {
                 Phases & Alignement
               </button>
               <button
+                onClick={() => setSelectedTab('actions')}
+                className={`px-6 py-4 font-medium transition-colors ${
+                  selectedTab === 'actions'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Actions
+              </button>
+              <button
                 onClick={() => setSelectedTab('alerts')}
                 className={`px-6 py-4 font-medium transition-colors relative ${
                   selectedTab === 'alerts'
@@ -347,6 +358,19 @@ export function GovernmentDashboard() {
             )}
             {selectedTab === 'phasesAlignment' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="col-span-1 md:col-span-2 flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Projet</label>
+                  <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={selectedProjectId || ''}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                  >
+                    <option value="">Sélectionnez un projet</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                </div>
                 {selectedProjectId ? (
                   <>
                     <div className="col-span-1 md:col-span-2 border-2 border-blue-500 ring-1 ring-blue-200 rounded-lg p-4 bg-white">
@@ -369,6 +393,56 @@ export function GovernmentDashboard() {
                     <div className="bg-white border rounded-lg p-4">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
                       <AlignmentChecklist projectId={selectedProjectId} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="col-span-2 bg-white border rounded-lg p-6 text-sm text-gray-600">
+                    {STRINGS.selectProjectForPhasesAlignment}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedTab === 'actions' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="col-span-1 md:col-span-2 flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Projet</label>
+                  <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={selectedProjectId || ''}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                  >
+                    <option value="">Sélectionnez un projet</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                </div>
+                {selectedProjectId ? (
+                  <>
+                    <div className="col-span-1 md:col-span-2 border-2 border-blue-500 ring-1 ring-blue-200 rounded-lg p-4 bg-white">
+                      <h4 className="text-sm font-semibold text-blue-700 mb-1">Projet sélectionné</h4>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{projects.find(p => p.id === selectedProjectId)?.title || ''}</p>
+                          <p className="text-sm text-gray-600">{projects.find(p => p.id === selectedProjectId)?.province || ''} - {projects.find(p => p.id === selectedProjectId)?.sector || ''}</p>
+                        </div>
+                        <div className="text-sm text-gray-700">
+                          <span className="mr-4">Budget: <span className="font-semibold">{formatCurrency(Number(projects.find(p => p.id === selectedProjectId)?.budget || 0))}</span></span>
+                          <span>Dépensé: <span className="font-semibold">{formatCurrency(Number(projects.find(p => p.id === selectedProjectId)?.spent || 0))}</span></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white border rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Actions — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
+                      {selectedProjectId && (
+                        <ProjectActionsPanel
+                          project={projects.find(p => p.id === selectedProjectId) as Project}
+                          onUpdated={(p) => {
+                            setProjects((prev) => prev.map((pr) => (pr.id === p.id ? p : pr)));
+                          }}
+                        />
+                      )}
                     </div>
                   </>
                 ) : (

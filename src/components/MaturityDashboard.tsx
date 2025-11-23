@@ -58,6 +58,8 @@ export default function MaturityDashboard({ projects }: Props) {
       ? "bg-orange-50 text-orange-800 border border-orange-200"
       : "bg-red-50 text-red-800 border border-red-200";
 
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
@@ -75,6 +77,22 @@ export default function MaturityDashboard({ projects }: Props) {
           </select>
         </div>
       </div>
+
+      {selectedProjectId && (
+        <div className="border-2 border-blue-500 ring-1 ring-blue-200 rounded-lg p-4 bg-white mb-4">
+          <h4 className="text-sm font-semibold text-blue-700 mb-1">Projet sélectionné</h4>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-medium text-gray-900">{projects.find(p => p.id === selectedProjectId)?.title || ''}</p>
+              <p className="text-sm text-gray-600">{projects.find(p => p.id === selectedProjectId)?.province || ''} - {projects.find(p => p.id === selectedProjectId)?.sector || ''}</p>
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="mr-4">Budget: <span className="font-semibold">{formatCurrency(Number(projects.find(p => p.id === selectedProjectId)?.budget || 0))}</span></span>
+              <span>Dépensé: <span className="font-semibold">{formatCurrency(Number(projects.find(p => p.id === selectedProjectId)?.spent || 0))}</span></span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading && <div className="text-sm text-gray-600">Chargement...</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
