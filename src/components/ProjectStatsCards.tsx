@@ -59,7 +59,7 @@ export const ProjectStatsCards: React.FC<ProjectStatsCardsProps> = ({ stats }) =
       value={stats.delayed}
       icon={<span role="img" aria-label="En retard">🚩</span>}
       color="bg-rdcRedLight"
-      subtitle={`${stats.delayedPercent}% en retard`}
+      subtitle={stats.delayedPercent > 0 ? `${stats.delayedPercent}% en retard` : undefined}
       link="#projects-delayed"
     />
   </div>
