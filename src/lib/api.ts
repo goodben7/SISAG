@@ -1,6 +1,12 @@
 import type { Database } from './database.types';
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const RAW_API = import.meta.env.VITE_API_BASE_URL as string | undefined;
+function stripEndSlash(u: string) { return u.replace(/\/$/, ''); }
+export const API_BASE = (() => {
+  if (RAW_API && typeof RAW_API === 'string' && RAW_API.length) return stripEndSlash(RAW_API);
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') return 'https://sisag.onrender.com';
+  return 'http://localhost:4000';
+})();
 
 let authToken: string | null = null;
 
@@ -8,14 +14,33 @@ export function setAuthToken(token: string | null) { authToken = token; if (toke
 export function getAuthToken() { if (!authToken) authToken = localStorage.getItem('sisag_token'); return authToken; }
 export function clearAuthToken() { setAuthToken(null); }
 
+function mergeHeaders(options: RequestInit): Record<string,string> {
+  const base: Record<string,string> = { 'Content-Type': 'application/json' };
+  const oh = options.headers;
+  if (oh) {
+    if (oh instanceof Headers) {
+      oh.forEach((v, k) => { base[k] = String(v); });
+    } else if (Array.isArray(oh)) {
+      for (const [k, v] of oh as [string,string][]) { base[k] = String(v); }
+    } else if (typeof oh === 'object') {
+      const obj = oh as Record<string, unknown>;
+      for (const k of Object.keys(obj)) {
+        const v = obj[k];
+        if (typeof v === 'string') base[k] = v;
+      }
+    }
+  }
+  return base;
+}
+
 async function request(path: string, options: RequestInit = {}) {
-  const headers: Record<string,string> = { 'Content-Type': 'application/json', ...(options.headers as any || {}) };
+  const headers = mergeHeaders(options);
   const token = getAuthToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE}${path}`, { headers, ...options });
   if (!res.ok) {
     let msg = 'Request failed';
-    try { const j = await res.json(); msg = j.error || msg; } catch {}
+    try { const j = await res.json(); msg = (j as Record<string, unknown>).error as string || msg; } catch { void 0; }
     throw new Error(msg);
   }
   return res.json();
@@ -43,13 +68,13 @@ export async function getProjects(filters?: { province?: string; sector?: string
   if (filters?.status) params.set('status', filters.status);
   return request(`/projects${params.toString() ? `?${params.toString()}` : ''}`, { method: 'GET' }) as Promise<Project[]>;
 }
-export async function createProject(payload: Omit<Database['public']['Tables']['projects']['Insert'],'created_by'|'images'> & { images?: any[] }) {
+export async function createProject(payload: Omit<Database['public']['Tables']['projects']['Insert'],'created_by'|'images'> & { images?: unknown[] }) {
   return request('/projects', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Project>;
 }
 export async function updateProject(projectId: string, payload: Partial<Database['public']['Tables']['projects']['Update']>) {
   return request(`/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify(payload) }) as Promise<Project>;
 }
-export type ProjectAction = { id: string; project_id: string; user_id: string; action_type: 'status_update'|'budget_update'|'field_update'; details: any; created_at: string };
+export type ProjectAction = { id: string; project_id: string; user_id: string; action_type: 'status_update'|'budget_update'|'field_update'; details: unknown; created_at: string };
 export async function getProjectActions(projectId: string) { return request(`/projects/${projectId}/actions`, { method: 'GET' }) as Promise<ProjectAction[]>; }
 
 // Alerts
@@ -64,7 +89,7 @@ export async function getReports(options?: { mine?: boolean }) {
   if (options?.mine) params.set('mine', 'true');
   return request(`/reports${params.toString() ? `?${params.toString()}` : ''}`, { method: 'GET' }) as Promise<Report[]>;
 }
-export async function createReport(payload: Omit<Database['public']['Tables']['reports']['Insert'],'reporter_id'|'images'> & { images?: any[] }) { return request('/reports', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Report>; }
+export async function createReport(payload: Omit<Database['public']['Tables']['reports']['Insert'],'reporter_id'|'images'> & { images?: unknown[] }) { return request('/reports', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Report>; }
 
 // Collaborative
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -72,11 +97,11 @@ export async function getProfiles() { return request('/profiles', { method: 'GET
 
 type Event = Database['public']['Tables']['events']['Row'];
 export async function getEvents() { return request('/events', { method: 'GET' }) as Promise<Event[]>; }
-export async function createEvent(payload: Omit<Database['public']['Tables']['events']['Insert'],'organizer_id'|'participants'> & { participants?: any[] }) { return request('/events', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Event>; }
+export async function createEvent(payload: Omit<Database['public']['Tables']['events']['Insert'],'organizer_id'|'participants'> & { participants?: unknown[] }) { return request('/events', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Event>; }
 
 type Message = Database['public']['Tables']['messages']['Row'];
 export async function getMessages() { return request('/messages', { method: 'GET' }) as Promise<Message[]>; }
-export async function createMessage(payload: Omit<Database['public']['Tables']['messages']['Insert'],'sender_id'|'attachments'|'is_read'> & { attachments?: any[] }) { return request('/messages', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Message>; }
+export async function createMessage(payload: Omit<Database['public']['Tables']['messages']['Insert'],'sender_id'|'attachments'|'is_read'> & { attachments?: unknown[] }) { return request('/messages', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Message>; }
 
 // Planning: Objectives, Phases, Alignment, Planning Alerts
 export type Objective = { id: string; code: string; title: string; level: 'national'|'provincial'|'territorial'; sector: string; created_at: string };
@@ -94,7 +119,7 @@ export type Phase = {
   actual_start: string | null;
   actual_end: string | null;
   status: 'planned'|'in_progress'|'completed'|'blocked';
-  deliverables: any[];
+  deliverables: unknown[];
   created_at: string;
   updated_at: string;
 };
@@ -152,7 +177,7 @@ export type MaturityAssessment = {
   logistics_ready: number;
   risks_identified: number;
   pag_alignment_percent: number;
-  attachments: any[];
+  attachments: unknown[];
 };
 export type MaturityResult = {
   assessment: MaturityAssessment;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Search, Filter, Building2, Clock, AlertTriangle } from 'lucide-react';
 import type { Database } from '../lib/database.types';
-import { getProjects } from '../lib/api';
+import { getProjects, API_BASE } from '../lib/api';
 import RDCProjectsMap from './RDCProjectsMap';
 
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -54,6 +54,7 @@ export function CitizenDashboard() {
     status: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     loadProjects();
@@ -68,8 +69,10 @@ export function CitizenDashboard() {
         status: (filters.status as Project['status']) || undefined
       });
       setProjects(data || []);
+      setErrorMsg(null);
     } catch (error) {
-      console.error('Error loading projects:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur inconnue';
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -105,6 +108,14 @@ export function CitizenDashboard() {
               <p className="text-blue-100 mt-1">Transparence et participation citoyenne</p>
             </div>
           </div>
+          {errorMsg && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <p className="text-sm">Impossible de charger les projets depuis {API_BASE}. {errorMsg}</p>
+                <button onClick={loadProjects} className="text-sm font-medium underline hover:no-underline">Réessayer</button>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
