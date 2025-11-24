@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, Search, Filter, Building2, Clock, AlertTriangle } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 import { getProjects } from '../lib/api';
+import RDCProjectsMap from './RDCProjectsMap';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 
@@ -170,9 +171,8 @@ export function CitizenDashboard() {
           )}
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="text-sm text-gray-600 mb-1">Total projets</div>
             <div className="text-2xl font-bold text-gray-900">{filteredProjects.length}</div>
@@ -195,6 +195,16 @@ export function CitizenDashboard() {
               {filteredProjects.filter(p => p.status === 'delayed').length}
             </div>
           </div>
+        </div>
+
+        <div className="mb-8">
+          <RDCProjectsMap
+            projects={projects}
+            onOpenProject={(id) => {
+              const p = projects.find(pr => pr.id === id) || null;
+              if (p) setSelectedProject(p);
+            }}
+          />
         </div>
 
         {loading ? (
