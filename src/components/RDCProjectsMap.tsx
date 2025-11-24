@@ -189,6 +189,11 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(txt, 'image/svg+xml');
         const svgRoot = doc.documentElement as unknown as SVGSVGElement;
+        const vbAttr = svgRoot.getAttribute('viewBox') || svgRoot.getAttribute('viewbox');
+        if (!svgRoot.getAttribute('viewBox')) {
+          if (vbAttr) svgRoot.setAttribute('viewBox', vbAttr);
+          else svgRoot.setAttribute('viewBox', '0 0 1000 994');
+        }
         svgRoot.removeAttribute('width');
         svgRoot.removeAttribute('height');
         svgRoot.setAttribute('preserveAspectRatio', svgRoot.getAttribute('preserveAspectRatio') || 'xMidYMid meet');
@@ -203,7 +208,7 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
     };
     load();
     return () => { cancelled = true; };
-  }, [map]);
+  }, []);
 
   useEffect(() => {
     if (!segmentedSvg || !svgContainerRef.current) return;
