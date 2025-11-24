@@ -246,8 +246,7 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
 
     const attach = (prov: string, el: SVGElement | null) => {
       if (!el) return;
-      if ((el as SVGElement).getAttribute('data-bound') === '1') return;
-      usedPaths.add(el);
+      const alreadyBound = (el as SVGElement).getAttribute('data-bound') === '1';
       const count = map.agg[prov]?.count || 0;
       const hasProjects = count > 0;
       if (hasProjects) {
@@ -264,22 +263,25 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
       const label = (code && CODE_TO_LABEL[code]) || prov;
       (el as SVGElement).setAttribute('title', `${label} • ${count} projet(s)`);
       (el as SVGElement).setAttribute('aria-label', `${label} • ${count} projet(s)`);
-      const handler = () => { if (hasProjects) setSelectedProvince(prov); };
-      el.addEventListener('click', handler);
-      el.addEventListener('mouseenter', () => {
-        if (!hasProjects) return;
-        try {
-          const bb = (el as SVGGraphicsElement).getBBox();
-          const cx = ((bb.x + bb.width / 2) / (vb.width || 1)) * 100;
-          const cy = ((bb.y + bb.height / 2) / (vb.height || 1)) * 100;
-          setHovered({ name: label, cx, cy });
-        } catch {
-          const pc = (PROVINCE_AREAS[prov] ? { cx: PROVINCE_AREAS[prov].left + PROVINCE_AREAS[prov].width / 2, cy: PROVINCE_AREAS[prov].top + PROVINCE_AREAS[prov].height / 2 } : null);
-          setHovered({ name: label, cx: pc?.cx ?? 50, cy: pc?.cy ?? 50 });
-        }
-      });
-      el.addEventListener('mouseleave', () => { setHovered(null); });
-      (el as SVGElement).setAttribute('data-bound', '1');
+      if (!alreadyBound) {
+        usedPaths.add(el);
+        const handler = () => { if (hasProjects) setSelectedProvince(prov); };
+        el.addEventListener('click', handler);
+        el.addEventListener('mouseenter', () => {
+          if (!hasProjects) return;
+          try {
+            const bb = (el as SVGGraphicsElement).getBBox();
+            const cx = ((bb.x + bb.width / 2) / (vb.width || 1)) * 100;
+            const cy = ((bb.y + bb.height / 2) / (vb.height || 1)) * 100;
+            setHovered({ name: label, cx, cy });
+          } catch {
+            const pc = (PROVINCE_AREAS[prov] ? { cx: PROVINCE_AREAS[prov].left + PROVINCE_AREAS[prov].width / 2, cy: PROVINCE_AREAS[prov].top + PROVINCE_AREAS[prov].height / 2 } : null);
+            setHovered({ name: label, cx: pc?.cx ?? 50, cy: pc?.cy ?? 50 });
+          }
+        });
+        el.addEventListener('mouseleave', () => { setHovered(null); });
+        (el as SVGElement).setAttribute('data-bound', '1');
+      }
     };
 
     // Priorité: identifiants si disponibles, sinon mapping géométrique
