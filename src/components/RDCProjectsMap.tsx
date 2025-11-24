@@ -268,12 +268,17 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
       const label = (code && CODE_TO_LABEL[code]) || prov;
       (el as SVGElement).setAttribute('title', `${label} • ${count} projet(s)`);
       (el as SVGElement).setAttribute('aria-label', `${label} • ${count} projet(s)`);
+      (el as SVGElement).setAttribute('data-count', String(count));
       if (!alreadyBound) {
         usedPaths.add(el);
-        const handler = () => { if (hasProjects) setSelectedProvince(prov); };
+        const handler = () => {
+          const c = Number((el as SVGElement).getAttribute('data-count') || '0');
+          if (c > 0) setSelectedProvince(prov);
+        };
         el.addEventListener('click', handler);
         el.addEventListener('mouseenter', () => {
-          if (!hasProjects) return;
+          const c = Number((el as SVGElement).getAttribute('data-count') || '0');
+          if (c <= 0) return;
           try {
             const bb = (el as SVGGraphicsElement).getBBox();
             const cx = ((bb.x + bb.width / 2) / (vb.width || 1)) * 100;
