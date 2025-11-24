@@ -109,6 +109,26 @@ const CODE_TO_LABEL: Record<string, string> = {
   CDTU: 'Tshuapa'
 };
 
+function normalizeKey(s: string) {
+  const t = (s || '').toString().trim().toLowerCase();
+  const n = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const r = n.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return r;
+}
+
+const CANONICAL_MAP: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const k of Object.keys(PROVINCE_AREAS)) {
+    m[normalizeKey(k)] = k;
+  }
+  return m;
+})();
+
+function toCanonicalProvinceName(name: string) {
+  const key = normalizeKey(name);
+  return CANONICAL_MAP[key] || name;
+}
+
 function frStatus(s: Project['status']) {
   if (s === 'completed') return 'Terminé';
   if (s === 'in_progress') return 'En cours';
@@ -125,13 +145,16 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
   const map = useMemo(() => {
     const byProv: Record<string, Project[]> = {};
     for (const p of projects) {
-      const key = p.province || '';
+      const key = toCanonicalProvinceName(p.province || '');
       if (!key) continue;
       if (!byProv[key]) byProv[key] = [];
       byProv[key].push(p);
     }
     const agg: Record<string, { color: string; count: number; status: Project['status'] | null }> = {};
-    const allProvs = Array.from(new Set([...PROVINCES, ...Object.keys(byProv)]));
+    const provSet = new Set<string>();
+    for (const p of PROVINCES) provSet.add(toCanonicalProvinceName(p));
+    for (const k of Object.keys(byProv)) provSet.add(toCanonicalProvinceName(k));
+    const allProvs = Array.from(provSet);
     for (const prov of allProvs) {
       const arr = byProv[prov] || [];
       let status: Project['status'] | null = null;
