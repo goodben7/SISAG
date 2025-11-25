@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, MapPin, Send, CheckCircle, XCircle } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
+import { STRINGS } from '../lib/strings';
 import type { Database } from '../lib/database.types';
 import { getProjects, getReports, createReport } from '../lib/api';
 
@@ -23,6 +24,7 @@ export function ReportingTool() {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const [formData, setFormData] = useState({
     project_id: '',
@@ -37,6 +39,12 @@ export function ReportingTool() {
     loadProjects();
     if (user) {
       loadMyReports();
+    }
+    const sp = new URLSearchParams(window.location.search);
+    const pid = sp.get('reportProjectId');
+    if (pid) {
+      setFormData((prev) => ({ ...prev, project_id: pid }));
+      setShowForm(true);
     }
   }, [user]);
 
@@ -147,7 +155,12 @@ export function ReportingTool() {
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', minimumFractionDigits: 0 }).format(amount);
+  };
+
   return (
+    <>
     <div className="min-h-screen bg-rdcGrayBg">
       <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -211,33 +224,46 @@ export function ReportingTool() {
                       Mes signalements
                     </h2>
                     <div className="space-y-4">
-                      {myReports.map((report) => (
-                        <div
-                          key={report.id}
-                          className={`border rounded-lg p-4 ${getStatusColor(report.status)}`}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-rdcTextPrimary">{report.title}</h3>
-                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/60">{getStatusLabel(report.status)}</span>
-                          </div>
-                          <p className="text-sm text-rdcGrayText mb-2">{report.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-rdcGrayText">
-                            <span>
-                              Catégorie:{' '}
-                              {CATEGORIES.find((c) => c.value === report.category)?.label}
-                            </span>
-                            <span>
-                              {new Date(report.created_at).toLocaleDateString('fr-FR')}
-                            </span>
-                          </div>
-                          {report.resolution_notes && (
-                            <div className="mt-3 pt-3 border-t border-current border-opacity-20">
-                              <p className="text-xs font-medium mb-1">Réponse:</p>
-                              <p className="text-sm">{report.resolution_notes}</p>
+                      {myReports.map((report) => {
+                        const pr = projects.find(p => p.id === (report.project_id || '')) || null;
+                        return (
+                          <div
+                            key={report.id}
+                            className={`border rounded-lg p-4 ${getStatusColor(report.status)}`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-semibold text-rdcTextPrimary">{report.title}</h3>
+                              <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/60">{getStatusLabel(report.status)}</span>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {pr && (
+                              <button
+                                type="button"
+                                className="text-xs text-rdcTextPrimary mb-2 underline underline-offset-2 hover:text-blue-600"
+                                onClick={() => setSelectedProject(pr)}
+                                title="Voir le détail du projet"
+                              >
+                                Projet: <span className="font-bold">{pr.title}</span> — {pr.province} — {pr.sector}
+                              </button>
+                            )}
+                            <p className="text-sm text-rdcGrayText mb-2">{report.description}</p>
+                            <div className="flex items-center gap-4 text-xs text-rdcGrayText">
+                              <span>
+                                Catégorie:{' '}
+                                {CATEGORIES.find((c) => c.value === report.category)?.label}
+                              </span>
+                              <span>
+                                {new Date(report.created_at).toLocaleDateString('fr-FR')}
+                              </span>
+                            </div>
+                            {report.resolution_notes && (
+                              <div className="mt-3 pt-3 border-t border-current border-opacity-20">
+                                <p className="text-xs font-medium mb-1">Réponse:</p>
+                                <p className="text-sm">{report.resolution_notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -396,7 +422,76 @@ export function ReportingTool() {
             )}
           </>
         )}
+    </div>
+  </div>
+  {selectedProject && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedProject(null)}>
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedProject.title}</h2>
+              <div className="text-sm text-gray-700">{selectedProject.city}, {selectedProject.province} • {selectedProject.sector}</div>
+              <div className="mt-1 text-xs text-gray-600">Statut: {STRINGS.projectStatusLabels[selectedProject.status]}</div>
+            </div>
+            <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-gray-600" title="Fermer">
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Budget alloué</h3>
+              <p className="text-gray-700 text-lg">{formatCurrency(Number(selectedProject.budget || 0))}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Budget dépensé</h3>
+              <p className="text-gray-700 text-lg">{formatCurrency(Number(selectedProject.spent || 0))}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Date de début</h3>
+              <p className="text-gray-700">{new Date(selectedProject.start_date).toLocaleDateString('fr-FR')}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Date de fin prévue</h3>
+              <p className="text-gray-700">{new Date(selectedProject.end_date).toLocaleDateString('fr-FR')}</p>
+            </div>
+            {selectedProject.actual_end_date && (
+              <div className="col-span-2">
+                <h3 className="font-semibold text-gray-900 mb-2">Date de fin réelle</h3>
+                <p className="text-gray-700">{new Date(selectedProject.actual_end_date).toLocaleDateString('fr-FR')}</p>
+              </div>
+            )}
+          </div>
+          <div className="mt-6 space-y-4">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+              <p className="text-gray-700">{selectedProject.description}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Localisation</h3>
+                <p className="text-gray-700">{selectedProject.city}, {selectedProject.province}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Secteur</h3>
+                <p className="text-gray-700">{selectedProject.sector}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Ministère</h3>
+                <p className="text-gray-700">{selectedProject.ministry}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Responsable</h3>
+                <p className="text-gray-700">{selectedProject.responsible_person}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  )}
+  </>
   );
 }

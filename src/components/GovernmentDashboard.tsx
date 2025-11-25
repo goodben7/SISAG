@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, AlertCircle, CheckCircle, DollarSign, FileText, Plus } from 'lucide-react';
+import { BarChart3, TrendingUp, AlertCircle, CheckCircle, DollarSign, FileText, Plus, XCircle } from 'lucide-react';
 
 import type { Database } from '../lib/database.types';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,8 +8,7 @@ import { AlertForm } from './AlertForm';
 import { STRINGS } from '../lib/strings';
 import { ProjectStatsCards } from './ProjectStatsCards';
 import { ProjectStatusChart } from './ProjectStatusChart';
-import { RecentAlerts } from './RecentAlerts';
-import { getProjects, getAlerts, getReports } from '../lib/api';
+import { getProjects, getAlerts, getReports, updateReport } from '../lib/api';
 import PhaseGantt from './PhaseGantt';
 import AlignmentChecklist from './AlignmentChecklist';
 import { PlanningAlertsPanel } from './PlanningAlertsPanel';
@@ -30,7 +29,6 @@ export function GovernmentDashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
   const [showAlertModal, setShowAlertModal] = useState(false);
-  const [refreshAlertsKey, setRefreshAlertsKey] = useState(0);
   const { profile } = useAuth();
 
   useEffect(() => {
@@ -108,6 +106,33 @@ export function GovernmentDashboard() {
     rejected: 'Rejeté'
   };
 
+  const canModerateReports = !!profile && (profile.role === 'government' || profile.role === 'partner');
+  const [reportProject, setReportProject] = useState<Project | null>(null);
+  const [reportsFilterProjectId, setReportsFilterProjectId] = useState<string>('');
+  const changeReportStatus = async (reportId: string, status: Report['status']) => {
+    try {
+      const updated = await updateReport(reportId, { status });
+      setReports((prev) => prev.map(r => r.id === reportId ? updated : r));
+    } catch (e) { console.error('Failed to update report status', e); }
+  };
+  const [modAction, setModAction] = useState<{ id: string; action: 'resolved'|'rejected' } | null>(null);
+  const [modNote, setModNote] = useState<string>('');
+  const [modError, setModError] = useState<string | null>(null);
+  const openModeration = (id: string, action: 'resolved'|'rejected') => { setModAction({ id, action }); setModNote(''); setModError(null); };
+  const confirmModeration = async () => {
+    if (!modAction) return;
+    try {
+      const updated = await updateReport(modAction.id, { status: modAction.action, resolution_notes: modNote });
+      setReports((prev) => prev.map(r => r.id === modAction.id ? updated : r));
+      setModAction(null);
+      setModNote('');
+      setModError(null);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Échec de mise à jour';
+      setModError(msg);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -127,7 +152,6 @@ export function GovernmentDashboard() {
           onClose={() => setShowAlertModal(false)}
           onCreated={() => {
             setShowAlertModal(false);
-            setRefreshAlertsKey((k) => k + 1);
             loadData();
           }}
         />
@@ -235,9 +259,6 @@ export function GovernmentDashboard() {
           <AdditionalIndicators projects={projects} alerts={alerts} />
         </div>
 
-        <div className="mb-8">
-          <RecentAlerts refreshKey={refreshAlertsKey} />
-        </div>
 
         <div className="bg-white rounded-lg shadow-sm">
           <div className="border-b border-gray-200">
@@ -462,23 +483,36 @@ export function GovernmentDashboard() {
                     <p>Aucune alerte pour le moment</p>
                   </div>
                 ) : (
-                  alerts.map((alert) => (
-                    <div key={alert.id} className={`border rounded-lg p-4 ${ALERT_SEVERITY_COLORS[alert.severity]}`}>
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold">{ALERT_TYPE_LABELS[alert.type]}</span>
-                            <span className="text-xs uppercase font-medium">{STRINGS.alertSeverityLabels[alert.severity]}</span>
+                  alerts.map((alert) => {
+                    const pr = projects.find(p => p.id === alert.project_id) || null;
+                    return (
+                      <div key={alert.id} className={`border rounded-lg p-4 ${ALERT_SEVERITY_COLORS[alert.severity]}`}>
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold">{ALERT_TYPE_LABELS[alert.type]}</span>
+                              <span className="text-xs uppercase font-medium">{STRINGS.alertSeverityLabels[alert.severity]}</span>
+                            </div>
+                            {pr && (
+                              <button
+                                type="button"
+                                className="text-xs text-gray-700 mb-1 underline underline-offset-2 hover:text-blue-700"
+                                onClick={() => setReportProject(pr)}
+                                title="Voir le détail du projet"
+                              >
+                                Projet: <span className="font-bold">{pr.title}</span> — {pr.province} — {pr.sector}
+                              </button>
+                            )}
+                            <p className="text-sm">{alert.message}</p>
+                            <p className="text-xs mt-2 opacity-75">
+                              {new Date(alert.created_at).toLocaleString('fr-FR')}
+                            </p>
                           </div>
-                          <p className="text-sm">{alert.message}</p>
-                          <p className="text-xs mt-2 opacity-75">
-                            {new Date(alert.created_at).toLocaleString('fr-FR')}
-                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
                 <div className="bg-white border rounded-lg p-4">
                   <PlanningAlertsPanel />
@@ -489,34 +523,244 @@ export function GovernmentDashboard() {
             {selectedTab === 'reports' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Signalements citoyens</h3>
-                {reports.length === 0 ? (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Projet</label>
+                  <select
+                    className="border rounded px-3 py-2 text-sm"
+                    value={reportsFilterProjectId}
+                    onChange={(e) => setReportsFilterProjectId(e.target.value)}
+                  >
+                    <option value="">Tous les projets</option>
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                </div>
+                {((reportsFilterProjectId ? reports.filter(r => r.project_id === reportsFilterProjectId) : reports).length === 0) ? (
                   <div className="text-center py-8 text-gray-500">
                     <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p>Aucun signalement</p>
                   </div>
                 ) : (
-                  reports.map((report) => (
-                    <div key={report.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">{report.title}</h4>
-                          <p className="text-sm text-gray-600 mb-2">{report.description}</p>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <span className={`px-2 py-1 rounded-full font-medium ${REPORT_STATUS_COLORS[report.status]}`}>
-                              {REPORT_STATUS_LABELS[report.status]}
-                            </span>
-                            <span>{new Date(report.created_at).toLocaleDateString('fr-FR')}</span>
+                  (reportsFilterProjectId ? reports.filter(r => r.project_id === reportsFilterProjectId) : reports).map((report) => {
+                    const pr = projects.find(p => p.id === (report.project_id || '')) || null;
+                    return (
+                      <div key={report.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-1">{report.title}</h4>
+                            {pr && (
+                              <button
+                                type="button"
+                                className="text-xs text-gray-700 mb-2 underline underline-offset-2 hover:text-blue-700"
+                                onClick={() => setReportProject(pr)}
+                                title="Voir le détail du projet"
+                              >
+                                Projet: <span className="font-bold">{pr.title}</span> — {pr.province} — {pr.sector}
+                              </button>
+                            )}
+                            <p className="text-sm text-gray-600 mb-2">{report.description}</p>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <span className={`px-2 py-1 rounded-full font-medium ${REPORT_STATUS_COLORS[report.status]}`}>
+                                {REPORT_STATUS_LABELS[report.status]}
+                              </span>
+                              <span>{new Date(report.created_at).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                            {report.resolution_notes && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <p className="text-xs font-medium mb-1">Réponse:</p>
+                                <p className="text-sm">{report.resolution_notes}</p>
+                              </div>
+                            )}
+                          </div>
+                         <div className="ml-4">
+                          {canModerateReports && (
+                            <div className="space-y-2 text-xs">
+                              {report.status === 'pending' && (
+                                <button onClick={() => changeReportStatus(report.id, 'in_review')} className="px-2 py-1 rounded border hover:bg-gray-50">Prendre en charge</button>
+                              )}
+                              {report.status === 'in_review' && (
+                                <div className="flex gap-2">
+                                  <button onClick={() => openModeration(report.id, 'resolved')} className="px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700">Marquer résolu</button>
+                                  <button onClick={() => openModeration(report.id, 'rejected')} className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700">Rejeter</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                {modAction && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" role="dialog" aria-modal="true">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                      <div className="p-4 border-b">
+                        <h4 className="text-sm font-semibold text-gray-900">
+                          {modAction.action === 'resolved' ? 'Marquer le signalement comme résolu' : 'Rejeter le signalement'}
+                        </h4>
+                      </div>
+                      <div className="p-4 space-y-3">
+                        <textarea
+                          value={modNote}
+                          onChange={(e) => setModNote(e.target.value)}
+                          className="w-full px-3 py-2 border rounded"
+                          rows={4}
+                          placeholder="Justification"
+                        />
+                        {modError && (
+                          <div className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded">{modError}</div>
+                        )}
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setModAction(null); setModNote(''); setModError(null); }} className="px-3 py-2 rounded border">Annuler</button>
+                          <button onClick={confirmModeration} className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Confirmer</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {reportProject && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" role="dialog" aria-modal="true" onClick={() => setReportProject(null)}>
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">{reportProject.title}</h2>
+                            <div className="text-sm text-gray-700">{reportProject.city}, {reportProject.province} • {reportProject.sector}</div>
+                            <div className="mt-1 text-xs text-gray-600">Statut: {STRINGS.projectStatusLabels[reportProject.status]}</div>
+                          </div>
+                          <button onClick={() => setReportProject(null)} className="text-gray-400 hover:text-gray-600" title="Fermer">
+                            <XCircle className="w-6 h-6" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 mb-2">Budget alloué</h3>
+                            <p className="text-gray-700 text-lg">{formatCurrency(Number(reportProject.budget || 0))}</p>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900 mb-2">Budget dépensé</h3>
+                            <p className="text-gray-700 text-lg">{formatCurrency(Number(reportProject.spent || 0))}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 mb-2">Date de début</h3>
+                            <p className="text-gray-700">{new Date(reportProject.start_date).toLocaleDateString('fr-FR')}</p>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900 mb-2">Date de fin prévue</h3>
+                            <p className="text-gray-700">{new Date(reportProject.end_date).toLocaleDateString('fr-FR')}</p>
+                          </div>
+                          {reportProject.actual_end_date && (
+                            <div className="col-span-2">
+                              <h3 className="font-semibold text-gray-900 mb-2">Date de fin réelle</h3>
+                              <p className="text-gray-700">{new Date(reportProject.actual_end_date).toLocaleDateString('fr-FR')}</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-6 space-y-4">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                            <p className="text-gray-700">{reportProject.description}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-2">Localisation</h3>
+                              <p className="text-gray-700">{reportProject.city}, {reportProject.province}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-2">Secteur</h3>
+                              <p className="text-gray-700">{reportProject.sector}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-2">Ministère</h3>
+                              <p className="text-gray-700">{reportProject.ministry}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900 mb-2">Responsable</h3>
+                              <p className="text-gray-700">{reportProject.responsible_person}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))
+                  </div>
                 )}
               </div>
             )}
-          </div>
         </div>
       </div>
+      {reportProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" role="dialog" aria-modal="true" onClick={() => setReportProject(null)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{reportProject.title}</h2>
+                  <div className="text-sm text-gray-700">{reportProject.city}, {reportProject.province} • {reportProject.sector}</div>
+                  <div className="mt-1 text-xs text-gray-600">Statut: {STRINGS.projectStatusLabels[reportProject.status]}</div>
+                </div>
+                <button onClick={() => setReportProject(null)} className="text-gray-400 hover:text-gray-600" title="Fermer">
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Budget alloué</h3>
+                  <p className="text-gray-700 text-lg">{formatCurrency(Number(reportProject.budget || 0))}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Budget dépensé</h3>
+                  <p className="text-gray-700 text-lg">{formatCurrency(Number(reportProject.spent || 0))}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Date de début</h3>
+                  <p className="text-gray-700">{new Date(reportProject.start_date).toLocaleDateString('fr-FR')}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Date de fin prévue</h3>
+                  <p className="text-gray-700">{new Date(reportProject.end_date).toLocaleDateString('fr-FR')}</p>
+                </div>
+                {reportProject.actual_end_date && (
+                  <div className="col-span-2">
+                    <h3 className="font-semibold text-gray-900 mb-2">Date de fin réelle</h3>
+                    <p className="text-gray-700">{new Date(reportProject.actual_end_date).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-6 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                  <p className="text-gray-700">{reportProject.description}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Localisation</h3>
+                    <p className="text-gray-700">{reportProject.city}, {reportProject.province}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Secteur</h3>
+                    <p className="text-gray-700">{reportProject.sector}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Ministère</h3>
+                    <p className="text-gray-700">{reportProject.ministry}</p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Responsable</h3>
+                    <p className="text-gray-700">{reportProject.responsible_person}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
-  );
+    );
 }

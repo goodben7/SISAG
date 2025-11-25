@@ -90,6 +90,9 @@ export async function getReports(options?: { mine?: boolean }) {
   return request(`/reports${params.toString() ? `?${params.toString()}` : ''}`, { method: 'GET' }) as Promise<Report[]>;
 }
 export async function createReport(payload: Omit<Database['public']['Tables']['reports']['Insert'],'reporter_id'|'images'> & { images?: unknown[] }) { return request('/reports', { method: 'POST', body: JSON.stringify(payload) }) as Promise<Report>; }
+export async function updateReport(reportId: string, payload: Partial<Pick<Report,'status'|'assigned_to'|'resolution_notes'>>) {
+  return request(`/reports/${reportId}`, { method: 'PATCH', body: JSON.stringify(payload) }) as Promise<Report>;
+}
 
 // Collaborative
 type Profile = Database['public']['Tables']['profiles']['Row'];

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home, BarChart3, AlertTriangle, Users, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
@@ -7,7 +7,7 @@ import { GovernmentDashboard } from './components/GovernmentDashboard';
 import { ReportingTool } from './components/ReportingTool';
 import { CollaborativeWorkspace } from './components/CollaborativeWorkspace';
 import { Footer } from './components/Footer';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AddProjectPage } from './components/AddProjectPage';
 
 type Page = 'citizen' | 'government' | 'reporting' | 'workspace';
@@ -17,6 +17,7 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -38,6 +39,15 @@ function AppContent() {
   };
 
   const filteredNavigation = navigation.filter(canAccessPage);
+
+  // Deep-linking via query params: ?page=reporting
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    const p = sp.get('page') as Page | null;
+    if (p && ['citizen','government','reporting','workspace'].includes(p) && p !== currentPage) {
+      setCurrentPage(p as Page);
+    }
+  }, [location.search]);
 
   return (
     <div className="min-h-screen bg-gray-50">

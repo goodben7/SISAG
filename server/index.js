@@ -254,6 +254,44 @@ app.post('/reports', requireAuth, (req, res) => {
   res.json(row);
 });
 
+// Update report status/assignment/resolution
+app.patch('/reports/:id', requireAuth, requireRole(['government','partner']), (req, res) => {
+  const { id } = req.params;
+  const existing = db.prepare('SELECT * FROM reports WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Report not found' });
+
+  const r = req.body || {};
+  const allowed = ['status','assigned_to','resolution_notes'];
+  const updates = {};
+  for (const k of allowed) {
+    if (Object.prototype.hasOwnProperty.call(r, k)) {
+      updates[k] = r[k];
+    }
+  }
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+
+  if (updates.status === 'in_review' && !updates.assigned_to) {
+    updates.assigned_to = req.userId;
+  }
+
+  const isFinal = existing.status === 'resolved' || existing.status === 'rejected';
+  if (isFinal && 'status' in updates && updates.status !== existing.status) {
+    return res.status(400).json({ error: 'Cannot change status from final state' });
+  }
+  if (('status' in updates) && (updates.status === 'resolved' || updates.status === 'rejected')) {
+    const notes = typeof updates.resolution_notes === 'string' ? updates.resolution_notes.trim() : '';
+    if (!notes) return res.status(400).json({ error: 'resolution_notes required' });
+  }
+
+  const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  const values = Object.keys(updates).map(k => updates[k]);
+  db.prepare(`UPDATE reports SET ${setClause} WHERE id = ?`).run(...values, id);
+
+  const row = db.prepare('SELECT * FROM reports WHERE id = ?').get(id);
+  row.images = JSON.parse(row.images || '[]');
+  res.json(row);
+});
+
 // Update project fields and log action
 app.patch('/projects/:id', requireAuth, requireRole(['government','partner']), (req, res) => {
   const { id } = req.params;

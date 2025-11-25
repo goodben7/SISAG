@@ -520,7 +520,19 @@ export default function RDCProjectsMap({ projects, onOpenProject }: Props) {
                                 <Eye className="w-3.5 h-3.5" /> Voir plus
                               </button>
                             )}
-                            <button className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50 inline-flex items-center gap-1">
+                            <button
+                              className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50 inline-flex items-center gap-1"
+                              onClick={() => {
+                                try {
+                                  const url = new URL(window.location.href);
+                                  url.searchParams.set('page', 'reporting');
+                                  url.searchParams.set('reportProjectId', p.id);
+                                  window.location.href = url.toString();
+                                } catch {
+                                  window.location.href = `/?page=reporting&reportProjectId=${p.id}`;
+                                }
+                              }}
+                            >
                               <AlertTriangle className="w-3.5 h-3.5" /> Signaler un problème
                             </button>
                           </div>
