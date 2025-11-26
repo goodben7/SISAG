@@ -1,4 +1,4 @@
-import { Mail, Phone, Shield } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -27,7 +27,7 @@ export function Footer() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-rdcBlue"><path d="M20 3.9A9.9 9.9 0 0 0 4.3 18.4L3 21l2.8-.7a9.9 9.9 0 0 0 14.2-8.6 9.9 9.9 0 0 0 0-7.8Zm-7 16.2c-2.2 0-4.2-.8-5.7-2.3A8 8 0 0 1 12 4a8 8 0 0 1 8 8c0 4.4-3.6 8-8 8Zm4.6-5.9-1.3-.6c-.4-.2-.8-.3-1.1.1l-.6.7c-.3.3-.6.3-1 .2-1.4-.6-3-2-3.5-3.4-.2-.4 0-.7.2-1l.5-.7c.2-.4.1-.8-.1-1.2l-.6-1.3c-.3-.8-.9-.8-1.3-.8h-.6c-.4 0-.8.3-1 1a4.3 4.3 0 0 0-.2 1.3c0 1.1.4 2.2 1.3 3.2 1.5 1.8 3.9 3.4 5.9 4 .3.1.6.1.9.1.3 0 .7-.1 1-.4l.5-.4c.5-.4.6-1 .3-1.6Z"/></svg>
               </a>
             </div>
-            <div className="mt-4 text-sm text-rdcGrayText flex items-center gap-2"><Shield className="w-4 h-4"/> Armoiries de la RDC</div>
+            
           </div>
           <div>
             <h3 className="font-display font-bold text-rdcTextPrimary mb-3">Contact</h3>
