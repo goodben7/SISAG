@@ -9,6 +9,7 @@ type Props = {
   onSave: (p: Phase) => Promise<void> | void;
   onDelete: (p: Phase) => void;
   isSelected?: boolean;
+  readOnly?: boolean;
 };
 
 function parseDate(d: string | null): number | null { if (!d) return null; const t = new Date(d).getTime(); return isNaN(t) ? null : t; }
@@ -26,7 +27,7 @@ function statusMeta(status: Phase["status"]) {
 
 const STATUSES: readonly Phase["status"][] = ["planned","in_progress","completed","blocked"];
 
-export default function PhaseCard({ phase, onFieldChange, onSave, onDelete, isSelected }: Props) {
+export default function PhaseCard({ phase, onFieldChange, onSave, onDelete, isSelected, readOnly }: Props) {
   const meta = statusMeta(phase.status);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -99,29 +100,33 @@ export default function PhaseCard({ phase, onFieldChange, onSave, onDelete, isSe
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-3" aria-label="Édition de la phase">
-        <input className="px-2 py-1 border rounded text-sm" value={phase.name} onChange={(e) => onFieldChange(phase.id, "name", e.target.value)} placeholder={STRINGS.phaseNameLabel} />
-        <select className="px-2 py-1 border rounded text-sm" value={phase.status} onChange={(e) => onFieldChange(phase.id, "status", e.target.value as Phase["status"]) } title="Changer le statut">
-          {STATUSES.map(s => (
-            <option key={s} value={s}>{STRINGS.phaseStatusLabels[s]}</option>
-          ))}
-        </select>
-        <input type="date" className="px-2 py-1 border rounded text-sm" value={phase.planned_start ?? ""} onChange={(e) => onFieldChange(phase.id, "planned_start", e.target.value || null)} title={STRINGS.plannedStartLabel} />
-        <input type="date" className="px-2 py-1 border rounded text-sm" value={phase.planned_end ?? ""} onChange={(e) => onFieldChange(phase.id, "planned_end", e.target.value || null)} title={STRINGS.plannedEndLabel} />
-        <input type="date" className="px-2 py-1 border rounded text-sm" value={phase.actual_start ?? ""} onChange={(e) => onFieldChange(phase.id, "actual_start", e.target.value || null)} title={STRINGS.actualStartLabel} />
-        <input type="date" className={`px-2 py-1 border rounded text-sm ${isEndDelayed ? "border-rdcRed" : ""}`} value={phase.actual_end ?? ""} onChange={(e) => onFieldChange(phase.id, "actual_end", e.target.value || null)} title={STRINGS.actualEndLabel} />
-      </div>
+      {!readOnly && (
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-3" aria-label="Édition de la phase">
+          <input className="px-2 py-1 border rounded text-sm" value={phase.name} onChange={(e) => onFieldChange(phase.id, "name", e.target.value)} placeholder={STRINGS.phaseNameLabel} />
+          <select className="px-2 py-1 border rounded text-sm" value={phase.status} onChange={(e) => onFieldChange(phase.id, "status", e.target.value as Phase["status"]) } title="Changer le statut">
+            {STATUSES.map(s => (
+              <option key={s} value={s}>{STRINGS.phaseStatusLabels[s]}</option>
+            ))}
+          </select>
+          <input type="date" className="px-2 py-1 border rounded text-sm" value={phase.planned_start ?? ""} onChange={(e) => onFieldChange(phase.id, "planned_start", e.target.value || null)} title={STRINGS.plannedStartLabel} />
+          <input type="date" className="px-2 py-1 border rounded text-sm" value={phase.planned_end ?? ""} onChange={(e) => onFieldChange(phase.id, "planned_end", e.target.value || null)} title={STRINGS.plannedEndLabel} />
+          <input type="date" className="px-2 py-1 border rounded text-sm" value={phase.actual_start ?? ""} onChange={(e) => onFieldChange(phase.id, "actual_start", e.target.value || null)} title={STRINGS.actualStartLabel} />
+          <input type="date" className={`px-2 py-1 border rounded text-sm ${isEndDelayed ? "border-rdcRed" : ""}`} value={phase.actual_end ?? ""} onChange={(e) => onFieldChange(phase.id, "actual_end", e.target.value || null)} title={STRINGS.actualEndLabel} />
+        </div>
+      )}
 
-      <div className="flex justify-end gap-2 mt-3">
-        <button className="px-3 py-1.5 rounded bg-rdcBlue text-white text-sm hover:bg-rdcBlueDark inline-flex items-center gap-1 disabled:opacity-50" onClick={handleSave} disabled={saving} title={STRINGS.saveLabel}>
-          <Check className="w-4 h-4" />{saving ? STRINGS.savingLabel : STRINGS.saveLabel}
-        </button>
-        <button className="px-3 py-1.5 rounded bg-rdcRed text-white text-sm hover:bg-rdcRedDark inline-flex items-center gap-1" onClick={() => onDelete(phase)} title={STRINGS.deleteLabel}>
-          <Trash className="w-4 h-4" />{STRINGS.deleteLabel}
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end gap-2 mt-3">
+          <button className="px-3 py-1.5 rounded bg-rdcBlue text-white text-sm hover:bg-rdcBlueDark inline-flex items-center gap-1 disabled:opacity-50" onClick={handleSave} disabled={saving} title={STRINGS.saveLabel}>
+            <Check className="w-4 h-4" />{saving ? STRINGS.savingLabel : STRINGS.saveLabel}
+          </button>
+          <button className="px-3 py-1.5 rounded bg-rdcRed text-white text-sm hover:bg-rdcRedDark inline-flex items-center gap-1" onClick={() => onDelete(phase)} title={STRINGS.deleteLabel}>
+            <Trash className="w-4 h-4" />{STRINGS.deleteLabel}
+          </button>
+        </div>
+      )}
 
-      {savedFlash && (
+      {savedFlash && !readOnly && (
         <div className="mt-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded inline-flex items-center gap-1"><CheckCircle className="w-4 h-4" />Phase mise à jour avec succès !</div>
       )}
     </div>

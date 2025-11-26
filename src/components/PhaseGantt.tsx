@@ -73,11 +73,11 @@ function PhaseForm({ form, onChange, onSubmit }: { form: NewPhaseForm; onChange:
   );
 }
 
-function PhaseItem({ phase, onFieldChange, onSave, onDelete, isSelected }: { phase: Phase; onFieldChange: (id: string, field: keyof Phase, value: any) => void; onSave: (p: Phase) => Promise<void> | void; onDelete: (p: Phase) => void; isSelected?: boolean; }) {
-  return <PhaseCard phase={phase} onFieldChange={onFieldChange} onSave={onSave} onDelete={onDelete} isSelected={isSelected} />;
+function PhaseItem({ phase, onFieldChange, onSave, onDelete, isSelected, readOnly }: { phase: Phase; onFieldChange: (id: string, field: keyof Phase, value: any) => void; onSave: (p: Phase) => Promise<void> | void; onDelete: (p: Phase) => void; isSelected?: boolean; readOnly?: boolean; }) {
+  return <PhaseCard phase={phase} onFieldChange={onFieldChange} onSave={onSave} onDelete={onDelete} isSelected={isSelected} readOnly={readOnly} />;
 }
 
-export function PhaseGantt({ projectId }: { projectId: string }) {
+export function PhaseGantt({ projectId, readOnly }: { projectId: string; readOnly?: boolean }) {
   const [phases, setPhases] = useState<Phase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -163,9 +163,9 @@ export function PhaseGantt({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      {flash && (<div className="text-xs text-green-700 bg-green-50 px-3 py-2 rounded inline-flex items-center gap-1"><CheckCircle className="w-4 h-4" />{flash}</div>)}
+      {flash && !readOnly && (<div className="text-xs text-green-700 bg-green-50 px-3 py-2 rounded inline-flex items-center gap-1"><CheckCircle className="w-4 h-4" />{flash}</div>)}
 
-      <PhaseForm form={newPhase} onChange={setNewPhase} onSubmit={onAddPhase} />
+      {!readOnly && (<PhaseForm form={newPhase} onChange={setNewPhase} onSubmit={onAddPhase} />)}
 
       {phases.length === 0 ? (
         <div className="text-sm text-gray-600">{STRINGS.noPhases}</div>
@@ -173,7 +173,7 @@ export function PhaseGantt({ projectId }: { projectId: string }) {
         <div className="space-y-4">
           <PhaseTimeline phases={phases} selectedId={selectedId} onSelect={(id) => setSelectedId(id)} />
           {phases.map((p) => (
-            <PhaseItem key={p.id} phase={p} onFieldChange={onPhaseFieldChange} onSave={onSavePhase} onDelete={onDeletePhase} isSelected={selectedId === p.id} />
+            <PhaseItem key={p.id} phase={p} onFieldChange={onPhaseFieldChange} onSave={onSavePhase} onDelete={onDeletePhase} isSelected={selectedId === p.id} readOnly={readOnly} />
           ))}
         </div>
       )}

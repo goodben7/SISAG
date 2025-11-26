@@ -382,11 +382,11 @@ export function GovernmentDashboard() {
                     </div>
                     <div className="bg-white border rounded-lg p-4">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Phases — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
-                      <PhaseGantt projectId={selectedProjectId} />
+                      <PhaseGantt projectId={selectedProjectId} readOnly />
                     </div>
                     <div className="bg-white border rounded-lg p-4">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Alignement — {projects.find(p => p.id === selectedProjectId)?.title || ''}</h4>
-                      <AlignmentChecklist projectId={selectedProjectId} />
+                      <AlignmentChecklist projectId={selectedProjectId} readOnly />
                     </div>
                   </>
                 ) : (

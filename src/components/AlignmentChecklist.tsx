@@ -8,7 +8,7 @@ import ObjectiveCard from "./ObjectiveCard";
 import { Info } from "lucide-react";
 import PagInfoModal from "./PagInfoModal";
 
-type AlignmentChecklistProps = { projectId: string };
+type AlignmentChecklistProps = { projectId: string; readOnly?: boolean };
 
 function ScoreBar({ score, redundancy, onInfo }: { score: number; redundancy: number; onInfo: () => void }) {
   const [animatedValue, setAnimatedValue] = useState(0);
@@ -73,9 +73,9 @@ function SuggestionsList({ suggestions, projectId, canEdit, onChanged }: { sugge
   );
 }
 
-export function AlignmentChecklist({ projectId }: AlignmentChecklistProps) {
+export function AlignmentChecklist({ projectId, readOnly }: AlignmentChecklistProps) {
   const { profile } = useAuth();
-  const canEdit = !!profile && (profile.role === 'government' || profile.role === 'partner');
+  const canEdit = !readOnly && !!profile && (profile.role === 'government' || profile.role === 'partner');
   const [data, setData] = useState<AlignmentResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
