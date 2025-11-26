@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, BarChart3, AlertTriangle, Users, LogIn, LogOut, Menu, X } from 'lucide-react';
+import { Home, BarChart3, AlertTriangle, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
 import { CitizenDashboard } from './components/CitizenDashboard';
@@ -29,7 +29,6 @@ function AppContent() {
     { id: 'citizen', name: 'Projets', icon: Home, public: true },
     { id: 'government', name: 'Tableau de bord', icon: BarChart3, roles: ['government', 'partner'] },
     { id: 'reporting', name: 'Signalement', icon: AlertTriangle, public: true },
-    { id: 'workspace', name: 'Collaboration', icon: Users, roles: ['government', 'partner'] },
   ];
 
   const canAccessPage = (page: typeof navigation[0]) => {
@@ -44,7 +43,7 @@ function AppContent() {
   useEffect(() => {
     const sp = new URLSearchParams(location.search);
     const p = sp.get('page') as Page | null;
-    if (p && ['citizen','government','reporting','workspace'].includes(p) && p !== currentPage) {
+    if (p && ['citizen','government','reporting'].includes(p) && p !== currentPage) {
       setCurrentPage(p as Page);
     }
   }, [location.search]);
